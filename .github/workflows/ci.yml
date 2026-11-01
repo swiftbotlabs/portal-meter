@@ -102,7 +102,7 @@ jobs:
       - name: Release build
         working-directory: contracts/ink/meter_registry
         run: |
-          cargo contract build --release $LOCKED
+          cargo contract build --release
           ls -l target/ink
           sha256sum target/ink/meter_registry.wasm target/ink/meter_registry.contract
           python3 - <<'PY'

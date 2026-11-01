@@ -117,7 +117,8 @@ async function refreshContracts(d, md) {
     ['endpoints listed', String(count)],
   ]);
   const rows = [];
-  for (let i = 1; i <= Number(count); i++) {
+  // anyone can list an endpoint in MeterSettlement: show the first 20 only
+  for (let i = 1; i <= Math.min(Number(count), 20); i++) {
     const ep = await readEndpoint(s, i);
     const [rec, rep] = await Promise.all([reg.endpoint(ep.provider, i).catch(() => null), reg.reputation(ep.provider, i).catch(() => null)]);
     rows.push(`<tr><td>${i}</td><td class="mono">${esc(rec ? rec.uri : '(not in registry)')}</td><td>${formatUnits(ep.price, md.decimals)} ${esc(md.symbol)}</td>

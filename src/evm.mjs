@@ -93,9 +93,21 @@ export async function sendTx(wallet, tx, { gasPriceBumpPct = 5n, gasLimitBumpPct
     gasPrice: (gasPrice * (100n + gasPriceBumpPct)) / 100n,
     gasLimit: (estimate * (100n + gasLimitBumpPct)) / 100n,
   });
-  const receipt = await sent.wait(1, 180_000);
-  if (!receipt || receipt.status !== 1) throw new Error(`transaction ${sent.hash} failed`);
+  const receipt = await waitReceipt(provider, sent.hash);
+  if (receipt.status !== 1) throw new Error(`transaction ${sent.hash} failed`);
   return receipt;
+}
+
+/** Plain receipt polling: no block subscription to get stuck on, and a hard deadline. */
+export async function waitReceipt(provider, hash, { timeoutMs = 180_000 } = {}) {
+  const pollMs = Math.min(provider.pollingInterval ?? 2000, 2000);
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const r = await provider.getTransactionReceipt(hash);
+    if (r) return r;
+    if (Date.now() > deadline) throw new Error(`no receipt for ${hash} after ${timeoutMs / 1000} s`);
+    await new Promise(res => setTimeout(res, pollMs));
+  }
 }
 
 export function describeRevert(err) {

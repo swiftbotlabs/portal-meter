@@ -13,7 +13,7 @@ import { MemoryRegistry } from '../src/registry.mjs';
 import { makeRoutes } from '../src/routes.mjs';
 import { NotFound, UpstreamError } from '../src/data.mjs';
 import { b64json, parseB64json, VERSION, proofMessage, HEADER_PAYMENT, HEADER_RESPONSE } from '../src/protocol.mjs';
-import { settlement as settlementContract, sendTx, readPayment, STATUS } from '../src/evm.mjs';
+import { settlement as settlementContract, sendTx, readPayment, waitReceipt, STATUS } from '../src/evm.mjs';
 
 const PRICE_ACCOUNT = 25_000n;
 const PRICE_ASSET = 10_000n;
@@ -36,6 +36,8 @@ function fakeUpstream() {
   };
 }
 
+const mined = async (tx, provider) => waitReceipt(provider, (await tx).hash, { timeoutMs: 20_000 });
+
 async function setup(t, { settlerOverride } = {}) {
   const chain = await startAnvil();
   t.after(() => chain.stop());
@@ -47,10 +49,10 @@ async function setup(t, { settlerOverride } = {}) {
   const s = await deploy(deployer, 'MeterSettlement.sol', 'MeterSettlement');
   const settlementAddress = await s.getAddress();
   const tokenAddress = await token.getAddress();
-  await (await token.mint(buyerKey.address, 1_000_000n)).wait();
+  await mined(token.mint(buyerKey.address, 1_000_000n), chain.provider);
   const asProvider = s.connect(providerKey);
-  await (await asProvider.registerEndpoint(payee, tokenAddress, PRICE_ACCOUNT, 600)).wait();
-  await (await asProvider.registerEndpoint(payee, tokenAddress, PRICE_ASSET, 600)).wait();
+  await mined(asProvider.registerEndpoint(payee, tokenAddress, PRICE_ACCOUNT, 600), chain.provider);
+  await mined(asProvider.registerEndpoint(payee, tokenAddress, PRICE_ASSET, 600), chain.provider);
 
   const registry = new MemoryRegistry({ settlement: settlementAddress, chainId: chain.chainId });
   registry.registerEndpoint(providerKey.address, 1, 'http://127.0.0.1/v1/account/{address}');
@@ -146,7 +148,7 @@ test('a proof signed by someone else, or replayed on another resource, is refuse
   const url = `${e.base}/v1/asset/1`;
   const q = parseB64json((await fetch(url)).headers.get('payment-required'));
   const tokenAsBuyer = e.token.connect(e.buyerKey);
-  await (await tokenAsBuyer.approve(e.settlementAddress, 10n ** 9n)).wait();
+  await mined(tokenAsBuyer.approve(e.settlementAddress, 10n ** 9n), e.chain.provider);
   await sendTx(e.buyerKey, { to: e.settlementAddress, data: e.s.interface.encodeFunctionData('pay', [q.endpointId, q.nonce, PRICE_ASSET]) });
   const rid = await e.s.requestIdFor(e.buyerKey.address, q.endpointId, q.nonce);
   const thief = Wallet.createRandom();

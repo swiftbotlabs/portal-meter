@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createServer } from 'node:net';
 import { Wallet, ContractFactory, JsonRpcProvider } from 'ethers';
 import { PATHS } from '../src/config.mjs';
+import { waitReceipt } from '../src/evm.mjs';
 
 export function artifact(file, name) {
   const p = join(PATHS.root, 'contracts', 'evm', 'out', file, `${name}.json`);
@@ -62,6 +63,6 @@ export async function startAnvil() {
 export async function deploy(wallet, file, name, args = []) {
   const { abi, bytecode } = artifact(file, name);
   const c = await new ContractFactory(abi, bytecode, wallet).deploy(...args);
-  await c.waitForDeployment();
+  await waitReceipt(wallet.provider, c.deploymentTransaction().hash, { timeoutMs: 20_000 });
   return c;
 }

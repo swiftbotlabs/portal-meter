@@ -70,16 +70,33 @@ slide('', `
   <img class="diagram" src="architecture.svg" alt="architecture">`);
 
 slide('proof', `
-  <h2>Proof: live on the PortaldotV3 testnet</h2>
-  ${dep ? `<table>${proofRows.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="mono">${esc(short(b, 10))}</td><td>${esc(c)}</td></tr>`).join('')}</table>
-  <p class="note">All transactions with blocks: deployments/testnet.json · live page reads them from the chain · explorer ${esc(EXPLORER)}</p>`
-    : '<p class="lead">Testnet deployment pending: addresses and transactions appear here once deployed.</p>'}
-  <div class="stats">
-    <div><b>${counts.foundry}</b><span>Foundry tests (unit, fuzz, invariant)</span></div>
-    <div><b>${counts.ink}</b><span>ink! unit tests</span></div>
-    <div><b>${counts.node}</b><span>Node tests (e2e on a local chain)</span></div>
-    <div><b>${dep ? '2 / 2' : '–'}</b><span>demo receipts verified (ACCEPT)</span></div>
+  <h2>Proof so far</h2>
+  <div class="cols">
+    <div>
+      <div class="stats">
+        <div><b>${counts.foundry}</b><span>Solidity tests<br>unit · fuzz · invariant</span></div>
+        <div><b>${counts.ink}</b><span>ink! unit tests</span></div>
+        <div><b>${counts.node}</b><span>Node tests incl.<br>end to end on a chain</span></div>
+      </div>
+      <ul class="small">
+        <li>CI on every push: Foundry, ink! release build (cargo-contract 5.0.3), Node end to end</li>
+        <li>Measured on the live testnet: the ink! code is accepted by an instantiate dry-run; Ethereum transactions to the runtime pallets address dispatch <code>batchAll(revive.call, contracts.call)</code></li>
+        <li>Live page reads both VMs from the browser and verifies receipts</li>
+        <li>Open source, MIT: github.com/swiftbotlab/portal-meter</li>
+      </ul>
+    </div>
+    <img class="shot" src="demo-page.png" alt="live page">
   </div>`);
+
+slide('proof', `
+  <h2>Testnet deployment</h2>
+  ${dep ? `<table>${proofRows.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="mono">${esc(short(b, 10))}</td><td>${esc(c)}</td></tr>`).join('')}</table>
+  <p class="note">All transactions with blocks: deployments/testnet.json · live page: swiftbotlab.github.io/portal-meter/demo · explorer ${esc(EXPLORER)}</p>`
+    : `<div class="placeholder"><b>PLACEHOLDER: filled after the testnet deployment</b><br>
+       MeterSettlement address and deploy tx · MeterRegistry (ink!) address · native asset id ·
+       endpoint registration tx (Solidity + ink! in one Ethereum tx) · one served request (pay, settle + anchor) ·
+       one refunded request (pay, refund + anchor) · buyer feedback tx</div>
+       <p class="note">The deployment runs with one command (scripts/deploy-testnet.mjs) once the deployer account holds testnet tPOT.</p>`}`);
 
 slide('', `
   <h2>Who pays, and how it grows</h2>
@@ -124,6 +141,10 @@ ol.flow { font-size: 22px; padding-left: 1.2em; }
 .card p { margin: 0; }
 code, .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
 code { background: #eef1f7; padding: 1px 5px; border-radius: 4px; }
+.shot { width: 100%; border: 1px solid #e2e6ef; border-radius: 10px; }
+.small { font-size: 17px; margin-top: 0.2in; }
+.small li { margin-bottom: 6px; }
+.placeholder { border: 3px dashed #e6007a; border-radius: 14px; padding: 0.35in; font-size: 22px; color: #2b3350; background: #fdf0f7; }
 .diagram { display: block; max-width: 100%; max-height: 5.6in; margin: 0 auto; }
 table { width: 100%; border-collapse: collapse; font-size: 16px; }
 td { padding: 7px 8px; border-bottom: 1px solid #e2e6ef; }
