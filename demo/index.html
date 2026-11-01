@@ -48,8 +48,8 @@
       <h2>Buy a real API call from this page</h2>
       <p class="muted">No wallet, no install. A public test key in this page signs a voucher against a capped prepaid session, the
         hosted seller checks it and answers. Nothing goes on-chain per request: the seller settles many requests in one
-        transaction, in Solidity and ink! together, and every batch carries the payer's signature over what was delivered.
-        Test tokens only.</p>
+        transaction, in Solidity and ink! together, and each batch carries a signature from the session key over the requests
+        made and the responses received. Test tokens only.</p>
       <div class="row try-row">
         <select id="try-kind" aria-label="endpoint"><option value="asset">/v1/asset/</option><option value="account">/v1/account/</option></select>
         <input id="try-arg" value="7777" maxlength="64" spellcheck="false" aria-label="asset id or address">
@@ -62,6 +62,13 @@
         <tbody><tr><td colspan="4" class="muted">no batch yet</td></tr></tbody></table></div>
       <div class="row"><button id="try-verify" type="button" class="ghost">Replay the session log against the chain</button></div>
       <div id="try-verdict" aria-live="polite"></div>
+      <h3 class="sub">What one request costs on-chain</h3>
+      <div class="table-scroll"><table><thead><tr><th></th><th>per-request escrow</th><th>prepaid session</th></tr></thead><tbody>
+        <tr><td>transactions per request</td><td>2</td><td><b>0</b></td></tr>
+        <tr><td>locked for good per request</td><td>7.53 tPOT</td><td><b>0.076 tPOT</b>, in a 100-request session</td></tr>
+        <tr><td>100 requests</td><td>about 753 tPOT</td><td><b>7.6 tPOT</b></td></tr>
+      </tbody></table></div>
+      <p class="muted">Measured on this testnet with our own keys, blocks 276657 to 276660 and <a href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">282559</a>. Test tokens have no value; the ratio is the point.</p>
     </section>
 
     <section class="card" id="video">

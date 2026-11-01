@@ -12,13 +12,15 @@ const short = (h, n = 8) => (h && h.length > 2 * n + 4 ? `${h.slice(0, n + 2)}�
 const EXPLORER = 'https://scanner-testnet-v3.portaldot.dev';
 const tx = label => dep?.transactions?.findLast(t => t.label.startsWith(label));
 const counts = JSON.parse(readFileSync(join(PATHS.root, 'pitch', 'counts.json'), 'utf8'));
+const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
+const m = ses.measured;
 
 const proofRows = dep ? [
   ['MeterSettlement (Solidity, EVM)', dep.settlement, `deploy ${short(dep.settlementTx)} · block ${dep.settlementBlock}`],
+  ['MeterSession (Solidity, EVM)', ses.sessionContract, `deploy ${short(ses.transactions.findLast(t => t.label === 'deploy MeterSession').hash)} · block ${ses.transactions.findLast(t => t.label === 'deploy MeterSession').block}`],
   ['MeterRegistry (ink!, WASM)', dep.registry.address, `instantiate ${short(dep.registry.instantiateTx)} · block ${dep.registry.block}`],
+  [`${m.requests} requests from ${m.sessions} sessions settled: redeem + ink! anchor, one Ethereum tx`, m.tx, `block ${m.block}`],
   [`Native asset #${dep.token.assetId} ${dep.token.symbol}`, dep.token.precompile, 'ERC-20 precompile address'],
-  ['Endpoints listed in ink! from the provider\'s Ethereum key', tx('provider: list')?.hash, `block ${tx('provider: list')?.block ?? ''}`],
-  ['Paid request: buyer pays into escrow', tx('buyer: pay request (served')?.hash, `block ${tx('buyer: pay request (served')?.block ?? ''}`],
   ['Served: settle + ink! anchor, one Ethereum tx', tx('provider: settle the served request in Solidity + anchor')?.hash, `block ${tx('provider: settle the served request in Solidity + anchor')?.block ?? ''}`],
   ['Refunded: refund + ink! anchor, one Ethereum tx', tx('provider: refund the undeliverable request in Solidity + anchor')?.hash, `block ${tx('provider: refund the undeliverable request in Solidity + anchor')?.block ?? ''}`],
   ['Buyer confirms in ink! from its Ethereum key', tx('buyer: confirm')?.hash, `block ${tx('buyer: confirm')?.block ?? ''}`],
@@ -30,7 +32,7 @@ const slide = (cls, html) => slides.push(`<section class="slide ${cls}">${html}<
 slide('title', `
   <div class="kicker">Portaldot Hacker House 2026 · Modular Cloud &amp; Middleware</div>
   <h1>Portal Meter</h1>
-  <p class="lead">Pay-per-request API settlement on Portaldot V3,<br>built on both of its contract VMs.</p>
+  <p class="lead">Sell any API per call on Portaldot V3,<br>settled across both of its contract VMs.</p>
   <p class="links">github.com/swiftbotlab/portal-meter · swiftbotlab.github.io/portal-meter/demo</p>`);
 
 slide('', `
@@ -47,14 +49,40 @@ slide('', `
   </div>`);
 
 slide('', `
-  <h2>Portal Meter</h2>
+  <h2>What one request costs on-chain</h2>
+  <div class="cols">
+    <div>
+      <p class="lead2">Every new storage slot locks a deposit. We measured our own first design, one payment per request, and it does not fit a call worth a fraction of a cent.</p>
+      <table class="cost">
+        <tr><th></th><th>Per-request escrow</th><th>Prepaid session</th></tr>
+        <tr><td>Transactions per request</td><td>2</td><td><b>0</b></td></tr>
+        <tr><td>Locked for good per request</td><td>7.53 tPOT</td><td><b>${m.lockedPerRequest} tPOT</b></td></tr>
+        <tr><td>${m.requestsInSession} requests</td><td>about ${(7.53 * m.requestsInSession).toFixed(0)} tPOT</td><td><b>${m.lockedTotal} tPOT</b></td></tr>
+      </table>
+      <p class="note">Measured on the PortaldotV3 testnet with our own keys: blocks 276657 to 276660 and ${m.block}. Test tokens have no value; the ratio is the point. deployments/proof/</p>
+    </div>
+    <div class="callout"><b>${m.ratio} times less locked per request</b><br>Same chain, same token, same seller. Escrow stays for calls worth a few cents or more: refund path, served once.</div>
+  </div>`);
+
+slide('', `
+  <h2>Prepaid sessions</h2>
+  <ol class="flow">
+    <li><b>Open once:</b> the payer locks a budget and can name a fresh session key: an agent can spend this budget and nothing else</li>
+    <li><b>Every request is a signed voucher, not a transaction.</b> The seller checks signature, budget, count and chain before the handler runs</li>
+    <li><b>Each voucher commits to the hash of the previous response.</b> A redeemed batch is signed by the session key, not claimed by the provider</li>
+    <li><b>One Ethereum transaction settles many sessions</b> across both VMs: <code>redeem</code> in Solidity, <code>record</code> in ink!, all or nothing</li>
+    <li><b>Failed request: not charged. Lost response: replayed free.</b></li>
+    <li><b>Anyone can replay the public log</b> against the chain: ACCEPT or REJECT, with every check listed</li>
+  </ol>`);
+
+slide('', `
+  <h2>Per-request escrow, for calls worth more</h2>
   <ol class="flow">
     <li><b>GET</b> → <code>402</code> with a quote (price, token, endpoint, nonce)</li>
     <li>Client pays <b>one request</b> into escrow: <code>MeterSettlement.pay()</code> on Portaldot's EVM; the request id is bound to the payer on-chain</li>
     <li>Client retries with a signed proof → served <b>once</b>, with a provider-signed receipt</li>
-    <li>Provider <b>settles</b> (funds to payee) or <b>refunds</b>; the buyer can reclaim after a delay if the provider does nothing</li>
+    <li>Provider <b>settles</b> or <b>refunds</b>; the buyer can reclaim after a delay if the provider does nothing</li>
     <li>The outcome is <b>anchored in an ink! registry</b> in the same transaction; buyers confirm or dispute</li>
-    <li>Anyone verifies a receipt: <b>ACCEPT / REJECT</b> with every check (CLI and browser)</li>
   </ol>`);
 
 slide('', `
@@ -81,8 +109,9 @@ slide('proof', `
       </div>
       <ul class="small">
         <li>CI on every push: Foundry, ink! release build (cargo-contract 5.0.3), Node end to end</li>
-        <li>14 negative checks on the live contracts: replays, strangers and tampered receipts are refused</li>
-        <li>Live page reads both VMs from the browser and verifies receipts</li>
+        <li>36 negative checks on the live seller and contracts: replays, strangers and tampered vouchers are refused</li>
+        <li>Independent security review before launch: findings fixed, MeterSession redeployed</li>
+        <li>The live page buys a real call from the browser and replays the log against both VMs</li>
         <li>Open source, MIT: github.com/swiftbotlab/portal-meter</li>
       </ul>
     </div>
@@ -103,35 +132,37 @@ slide('', `
   <h2>One transaction, both VMs</h2>
   <div class="cols even">
     <div>
-      <p class="lead2">The provider's Ethereum key signs <b>one</b> transaction to the runtime pallets address:</p>
-      <p><code>utility.batchAll([revive.call(settle), contracts.call(record)])</code></p>
+      <p class="lead2">The provider's Ethereum key signs <b>one</b> transaction to the runtime pallets address. Here it was signed inside a Cloudflare Worker:</p>
+      <p><code>utility.batchAll([revive.call(redeem), contracts.call(record), ...])</code></p>
       <ul class="small">
-        <li>The buyer's escrow moves to the payee (<code>assets.Transferred</code>, <code>revive.ContractEmitted</code>)</li>
-        <li>The ink! registry anchors the outcome (<code>contracts.ContractEmitted</code>, <code>contracts.Called</code>)</li>
+        <li><b>${m.requests} requests, ${m.sessions} sessions, one transaction</b></li>
+        <li>Budgets move to the payee (<code>assets.Transferred</code>, <code>revive.ContractEmitted</code>)</li>
+        <li>The ink! registry anchors each batch (<code>contracts.Called</code>)</li>
         <li>All or nothing: <code>utility.BatchCompleted</code></li>
-        <li>Block 276,658 on the testnet explorer, events tab</li>
+        <li>Block ${m.block.toLocaleString('en-US')} on the testnet explorer, events tab</li>
       </ul>
     </div>
-    <img class="shot" src="block-events.png" alt="events of block 276658">
+    <img class="shot" src="block-events.png" alt="events of block ${m.block}">
   </div>`);
 
 slide('', `
   <h2>Who pays, and how it grows</h2>
   <div class="cols">
     <ul class="big">
-      <li><b>Users:</b> data/API providers on Portaldot (indexers, RPC and analytics services, AI tool endpoints) and the apps and agents that call them.</li>
-      <li><b>First product:</b> the paid Portaldot data API in this repo (cross-VM account and asset views): a real endpoint other builders can call per request.</li>
-      <li><b>Revenue (planned):</b> a small protocol fee on settlement (basis points, per deployment; not in the testnet contract yet) and a hosted seller for providers who do not want to run one.</li>
-      <li><b>Growth:</b> drop-in middleware for Express/Fastify, listing in the Portaldot ecosystem directory, wallet support for 402 quotes.</li>
+      <li><b>Users:</b> data and API providers on Portaldot (indexers, RPC and analytics services, AI tool endpoints) and the apps and agents that call them.</li>
+      <li><b>First product, live:</b> the paid Portaldot data API, 0.01 pUSD per call, priced in Portaldot's own test dollar, so any builder can buy with real testnet funds.</li>
+      <li><b>Revenue (planned):</b> a small protocol fee on settlement (basis points, not in the testnet contracts yet) and a hosted seller for providers who do not want to run one. The Worker already shows what that service is.</li>
+      <li><b>Growth:</b> a few lines to add to any API (Express, Workers, Bun, Deno), then one command to register. Listing in the Portaldot ecosystem directory, wallet support for 402 quotes.</li>
     </ul>
+    <div class="callout"><b>Honest status</b><br>Traffic so far is our own measurement key and visitors of the live page. No user demand is claimed. The next milestone is a second provider.</div>
   </div>`);
 
 slide('', `
   <h2>Roadmap, and why keep supporting it</h2>
   <div class="grid2">
-    <div class="card"><h3>Next 4 weeks</h3><p>npm middleware package · batch settlement (many requests per transaction) · provider bond held in the ink! registry, slashable on disputes · mainnet migration review</p></div>
-    <div class="card"><h3>Next quarter</h3><p>prepaid credit channels for high-frequency callers · explorer / wallet integration of receipts · more paid Portaldot data endpoints</p></div>
-    <div class="card"><h3>What Portaldot gets</h3><p>open-source middleware every API builder can reuse · real fee-paying transactions on both VMs · a reference for cross-VM design (documented, tested, measured)</p></div>
+    <div class="card"><h3>Next 4 weeks</h3><p>npm package and a provider CLI wizard · paid endpoints from other Portaldot builders · session keys with spending rules · mainnet migration review</p></div>
+    <div class="card"><h3>Next quarter</h3><p>provider bond held in the ink! registry · wallet and explorer support for quotes and receipts · a hosted seller for providers</p></div>
+    <div class="card"><h3>What Portaldot gets</h3><p>open-source middleware every API builder can reuse · fee-paying transactions on both VMs · measured notes on deposits and cross-VM calls for other teams</p></div>
     <div class="card"><h3>Team</h3><p>Swift Bot Labs, a small studio building payment and API infrastructure. Builds on our MIT-licensed HSK Meter (Oct 2026); this repository was written for Portaldot during the Hacker House.</p></div>
   </div>`);
 
@@ -166,7 +197,9 @@ code { background: #eef1f7; padding: 1px 5px; border-radius: 4px; }
 .placeholder { border: 3px dashed #e6007a; border-radius: 14px; padding: 0.35in; font-size: 22px; color: #2b3350; background: #fdf0f7; }
 .diagram { display: block; max-width: 100%; max-height: 5.6in; margin: 0 auto; }
 table { width: 100%; border-collapse: collapse; font-size: 16px; }
-td { padding: 7px 8px; border-bottom: 1px solid #e2e6ef; }
+td, th { padding: 7px 8px; border-bottom: 1px solid #e2e6ef; text-align: left; }
+table.cost { font-size: 20px; margin: 0.15in 0; }
+table.cost b { color: #e6007a; }
 .note { color: #5b6478; font-size: 14px; }
 .stats { display: flex; gap: 0.25in; margin-top: 0.2in; }
 .stats div { border: 1px solid #e2e6ef; border-radius: 10px; padding: 10px 16px; }

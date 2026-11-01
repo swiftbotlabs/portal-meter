@@ -1,0 +1,116 @@
+{
+  "at": "2026-11-01T20:57:39.572Z",
+  "block": 282442,
+  "results": [
+    {
+      "name": "seller: underpays by one base unit",
+      "got": 409,
+      "ok": true
+    },
+    {
+      "name": "seller: skips a step",
+      "got": 409,
+      "ok": true
+    },
+    {
+      "name": "seller: replays step 1",
+      "got": 409,
+      "ok": true
+    },
+    {
+      "name": "seller: head that does not extend the chain",
+      "got": 409,
+      "ok": true
+    },
+    {
+      "name": "seller: signed by a stranger",
+      "got": 401,
+      "ok": true
+    },
+    {
+      "name": "seller: v byte that ethers accepts and ecrecover does not",
+      "got": 400,
+      "ok": true
+    },
+    {
+      "name": "seller: session that does not exist",
+      "got": 404,
+      "ok": true
+    },
+    {
+      "name": "seller: more than the budget",
+      "got": 409,
+      "ok": true
+    },
+    {
+      "name": "seller: header that is not base64",
+      "got": 400,
+      "ok": true
+    },
+    {
+      "name": "seller: oversized header",
+      "got": 400,
+      "ok": true
+    },
+    {
+      "name": "seller: asset id that is not a number, free",
+      "got": 400,
+      "ok": true
+    },
+    {
+      "name": "seller: address with a bad checksum, free",
+      "got": 400,
+      "ok": true
+    },
+    {
+      "name": "seller: settlement trigger without the token",
+      "got": 404,
+      "ok": true
+    },
+    {
+      "name": "seller: internal route from outside",
+      "got": 404,
+      "ok": true
+    },
+    {
+      "name": "contract: redeem from a stranger",
+      "got": "NotAllowed",
+      "ok": true
+    },
+    {
+      "name": "contract: tampered amount",
+      "got": "BadSignature",
+      "ok": true
+    },
+    {
+      "name": "contract: malleated signature",
+      "got": "BadSignature",
+      "ok": true
+    },
+    {
+      "name": "contract: over budget",
+      "got": "OverBudget",
+      "ok": true
+    },
+    {
+      "name": "contract: close before expiry",
+      "got": "TooEarly",
+      "ok": true
+    },
+    {
+      "name": "contract: close by the provider",
+      "got": "NotAllowed",
+      "ok": true
+    },
+    {
+      "name": "contract: session that does not exist",
+      "got": "NoSession",
+      "ok": true
+    },
+    {
+      "name": "session unchanged afterwards",
+      "got": true,
+      "ok": true
+    }
+  ]
+}

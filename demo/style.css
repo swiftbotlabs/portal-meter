@@ -102,3 +102,4 @@ button:disabled { opacity: 0.6; cursor: progress; }
 .try-row input, .try-row select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 pre.body { background: var(--code); border-radius: 8px; padding: 10px 12px; max-height: 260px; overflow: auto; font-size: 0.82rem; margin: 8px 0; }
 .m.DONE, .m.PASS { color: var(--ok); }
+.sub { font-size: 0.95rem; margin: 16px 0 6px; }

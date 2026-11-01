@@ -1,5 +1,6 @@
 // "Try it" panel: buys one real request from the hosted seller with a public demo key, right in this browser.
-// The key is derived from a public string and can only sign vouchers for one capped session of test tokens.
+// The key is derived from a public string and can only sign vouchers for one capped session of test tokens. Visitors
+// share it, so this page takes the session's place from the seller; a real client keeps its own count and head.
 import { JsonRpcProvider, Wallet, keccak256, toUtf8Bytes, id as eventTopic } from 'ethers';
 import { SessionClient } from '../src/session-client.mjs';
 import { verifyLog } from '../src/session.mjs';
@@ -78,7 +79,7 @@ export async function setupTry(s, net) {
         return;
       }
       step('PASS', 'HTTP 200: body received, its hash matches the provider-signed receipt', `response ${short(r.receipt.responseHash)}`);
-      step('PASS', `Your next voucher will acknowledge this response`, 'that is how delivery ends up signed by the payer');
+      step('PASS', 'The next voucher of this session commits to this response hash', 'the key here is shared by visitors, so this shows the mechanism; a real client checks each response before it signs the next voucher');
       $('try-body').textContent = text;
       $('try-body').hidden = false;
       return;

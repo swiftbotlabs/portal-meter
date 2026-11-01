@@ -57,10 +57,20 @@ async function run(sess) {
   const t0 = Date.now();
   let done = 0;
   while (done < sess.n) {
-    const r = await client.get(base + paths[done % paths.length]);
-    if (r.status === 200) done += 1;
-    else console.log('retry', r.status);
-    await new Promise(res => setTimeout(res, r.status === 429 ? 30_000 : PAUSE_MS));
+    let status = 0;
+    try {
+      const r = await client.get(base + paths[done % paths.length]);
+      status = r.status;
+      if (r.status === 200) done += 1;
+      else console.log('retry', r.status);
+    } catch (e) {
+      console.log('network', e.message); // the home line drops now and then: pick the session up where the seller has it
+      await new Promise(res => setTimeout(res, 15_000));
+      const view = await fetch(`${base}/v1/session/${sess.id}`).then(r => r.json()).catch(() => null);
+      if (view && client.resume(view)) done += 1;
+      continue;
+    }
+    await new Promise(res => setTimeout(res, status === 429 ? 30_000 : PAUSE_MS));
   }
   log('requests', { session: sess.id, requests: done, seconds: Math.round((Date.now() - t0) / 1000), onChainTransactions: 0 });
 }

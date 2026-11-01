@@ -2,27 +2,86 @@
 
 [![CI](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml)
 
-**Pay-per-request API settlement for Portaldot V3, running across both of its contract VMs.**
+**Sell any API per call on Portaldot V3, settled across both of its contract VMs.**
 
-An API provider lists an endpoint with a price. A client pays for **one request** in a Portaldot native asset,
-reached from Solidity through the runtime's ERC-20 precompile. The payment waits in escrow in a Solidity contract on
-Portaldot's EVM. The provider serves the request once and settles it, or refunds it when it cannot deliver. In the
-same Ethereum-signed transaction, the outcome is anchored in an **ink!** registry on Portaldot's WASM VM, which
-gives every provider a public, per-request track record that buyers can check before they pay.
+An API provider lists an endpoint with a price. A client pays per call in a Portaldot native asset, reached from Solidity
+through the runtime's ERC-20 precompile. Money moves in a Solidity contract on Portaldot's EVM. In the same Ethereum-signed
+transaction, the outcome lands in an **ink!** registry on Portaldot's WASM VM, which gives every provider a public record
+that buyers can check before they pay. Two ways to pay share that design:
+
+- **Prepaid session**, for high-frequency APIs. One budget, one signed voucher per request, no transaction per request. One
+  Ethereum transaction settles many requests across both VMs. Each voucher commits to the hash of the previous response.
+- **Per-request escrow**, for calls worth a few cents or more. Pay into escrow, served once, settled or refunded.
 
 By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & Middleware**.
 
-**Live page:** [swiftbotlab.github.io/portal-meter/demo/](https://swiftbotlab.github.io/portal-meter/demo/) reads the
-PortaldotV3 testnet from your browser (network, the native-asset ERC-20 precompile, contracts, endpoints, provider
-record, payments) and includes a free receipt verifier.
+**Live page:** [swiftbotlab.github.io/portal-meter/demo/](https://swiftbotlab.github.io/portal-meter/demo/) buys a real API
+call from your browser with no wallet, reads both VMs directly, and includes a free receipt verifier.
+**Hosted seller:** [portal-meter.swiftbotlab.workers.dev](https://portal-meter.swiftbotlab.workers.dev/) (a paid Portaldot
+data API at 0.01 pUSD per call, on the testnet).
+**Demo video:** [YouTube](https://youtu.be/9YKFQafSMRo). **Pitch deck:**
+[PDF](https://swiftbotlab.github.io/portal-meter/pitch/portal-meter-deck.pdf).
 
-**Demo video (2:42, voice-over and captions):** [YouTube](https://youtu.be/9YKFQafSMRo).
-**Pitch deck:** [PDF](https://swiftbotlab.github.io/portal-meter/pitch/portal-meter-deck.pdf).
+## Check it in two minutes
 
-> **Live on the PortaldotV3 testnet since 2026-11-01:** both contracts, a real paid request and a real refund, each
-> settled in Solidity and anchored in ink! in one Ethereum transaction. See [Testnet deployment](#testnet-deployment).
+1. Open the [live page](https://swiftbotlab.github.io/portal-meter/demo/) and press **Buy one request**. A public test key signs
+   a voucher in your browser, the seller checks it and answers: HTTP 402, then 200, no wallet and no gas.
+2. Press **Replay the session log against the chain**. It replays the public log, compares it with the signed head in the `Redeemed`
+   event and reads the ink! anchor: ACCEPT, with every check listed.
+3. Open the events of [block 282559](https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events): one Ethereum
+   transaction settled **137 requests from 3 sessions**. `revive.ContractEmitted`, `assets.Transferred`, `contracts.Called` and
+   `utility.BatchCompleted` sit inside one extrinsic.
+4. Ask for data without paying: `curl -i https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777` answers 402 and a quote.
+5. Try to cheat: `node scripts/negative-checks-sessions.mjs` sends bad vouchers to the live seller and dry-runs against the live
+   contract, no key needed. 22 of 22 are refused.
 
-## How a request is paid
+## What one request costs on-chain
+
+Storage deposits decide this. We measured both paths on the testnet with our own keys (the numbers are in
+[`deployments/proof/`](deployments/proof)). Test tokens have no value; the ratio is the point.
+
+| | Per-request escrow | Prepaid session |
+|---|---|---|
+| Transactions per request | 2 | 0 |
+| Locked for good per request | 7.53 tPOT | 0.076 tPOT in a 100-request session |
+| 100 requests in total | about 753 tPOT | 7.6 tPOT |
+
+Escrow numbers: blocks 276657 to 276660. Session numbers: 100 requests sent over HTTP to the hosted seller, no transaction per
+request, then one batch. The session locks 11.55 tPOT at open, 7.67 of which comes back at close, and its batch locks one ink!
+anchor, 3.68 tPOT. Each further batch of a session adds one more anchor. Settlement also runs unattended: the seller's cron sent
+[block 282470](https://scanner-testnet-v3.portaldot.dev/#/blocks/282470?tab=events) by itself. Details: [docs/SESSIONS.md](docs/SESSIONS.md).
+
+## Add it to your API
+
+```js
+import { createMeter, metered } from './src/meter.mjs';
+
+const meter = createMeter({ chainId, sessionContract, endpointId, wallet, token, tokenSymbol, decimals, readSession });
+
+// Express or anything with (req, res, next): the handler returns the body, the meter hashes and signs it
+app.get('/v1/weather/:city', metered(meter, { price: 10_000n }, async req => forecast(req.params.city)));
+
+// Cloudflare Workers, Bun, Deno, Hono: Web standard Request and Response
+export default { fetch: req => meter.charge(req, { price: 10_000n }, () => forecast('oslo')) };
+```
+
+The core has no server of its own and needs no polkadot.js. [`worker/`](worker) is the real thing: the hosted seller in one file, with
+a Durable Object as its ledger and a cron for settlement. [`examples/sell-an-api.mjs`](examples/sell-an-api.mjs) is a thirty-line paid
+API. Then:
+
+```bash
+node bin/portal-meter.mjs register --keys provider.env --asset 7777 --price 0.01 --payee 0x… --url https://you.example/v1/   # one tx, both VMs
+node bin/portal-meter.mjs session-open 3 --keys buyer.env --budget 0.5 --out session.json    # lock a budget, get a capped session key
+node bin/portal-meter.mjs session-buy https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777 --session session.json
+```
+
+`pUSD` (asset 7777) is Portaldot's own test dollar: any builder can get it from the native exchange, so this works with real testnet
+funds and no help from us.
+
+> **Live on the PortaldotV3 testnet since 2026-11-01:** both payment contracts, the ink! registry, the hosted seller, and real
+> requests settled in Solidity and anchored in ink! in one Ethereum transaction. See [Testnet deployment](#testnet-deployment).
+
+## How a request is paid (escrow path)
 
 ![Architecture](pitch/architecture.svg)
 
@@ -39,7 +98,7 @@ record, payments) and includes a free receipt verifier.
 5. The client gets the body and a provider-signed receipt. Anyone can verify it: **ACCEPT / REJECT** with every
    check, on the command line or in the browser.
 
-Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PROTOCOL.md](docs/PROTOCOL.md) ·
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/SESSIONS.md](docs/SESSIONS.md) · [docs/PROTOCOL.md](docs/PROTOCOL.md) ·
 [SECURITY.md](SECURITY.md) · measured network facts in [docs/PORTALDOT_V3_NOTES.md](docs/PORTALDOT_V3_NOTES.md).
 
 ## Why Portaldot
@@ -48,8 +107,9 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PROTOCOL.md](docs
 |---|---|
 | Native assets exposed to Solidity as ERC-20 (pallet-assets precompile) | endpoints are priced in a native asset (`tUSDm`); no wrapped token contract |
 | Two contract VMs in one runtime (pallet-revive EVM + pallet-contracts WASM) | escrow in Solidity, provider registry in ink!, both keyed by the same EVM address |
-| Runtime calls from Ethereum transactions (`revive.ethSubstrateCall`) | settlement + registry anchor in one atomic transaction signed by the provider's Ethereum key; buyers rate providers in ink! from their Ethereum key |
-| Storage deposits (pallet-revive / pallet-contracts) | payments clear their amount slot when final, so the deposit comes back |
+| Runtime calls from Ethereum transactions (`revive.ethSubstrateCall`) | money and record in one atomic transaction signed by the provider's Ethereum key, many sessions per transaction; buyers rate providers in ink! from their Ethereum key |
+| Storage deposits (pallet-revive / pallet-contracts) | measured per request, then designed around: sessions write nothing per request |
+| Native exchange and pUSD (asset 7777) | the hosted seller is priced in Portaldot's own test dollar, which any builder can swap for on `pallet-asset-conversion` |
 
 The ink! registry recomputes the Solidity request id (`keccak256(abi.encode(chainId, settlement, payer, endpoint,
 nonce))`) from the caller's own address. Only the account that paid on the EVM side can rate a request, and no
@@ -64,7 +124,9 @@ PortaldotV3 testnet: EVM chain id `420420777`, `https://test-evm-rpc-v3.portaldo
 |---|---|---|
 | `MeterSettlement` (Solidity, pallet-revive) | `0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e` | [block 276611](https://scanner-testnet-v3.portaldot.dev/#/blocks/276611?tab=events), tx `0x1adf1c422c9782a22d974dea3d2abc0be287da435747883e7895375d15731227` |
 | `MeterRegistry` (ink!, pallet-contracts) | [`5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4`](https://scanner-testnet-v3.portaldot.dev/#/accounts/5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4) | [block 276655](https://scanner-testnet-v3.portaldot.dev/#/blocks/276655?tab=events), extrinsic `0xef17ab339d696959449ed2e94bd066fb86de2a1945297d0d3d7dc35f97bd60e0` |
-| Payment token: native asset [#43907 tUSDm](https://scanner-testnet-v3.portaldot.dev/#/assets/43907) (test token, no value) | ERC-20 precompile `0x0000ab8300000000000000000000000000010000` | [block 276610](https://scanner-testnet-v3.portaldot.dev/#/blocks/276610?tab=events) |
+| `MeterSession` (Solidity, pallet-revive) | `0xCc2aBc8AC1B5676e8f9678bb5B6881A0b743B3d5` | [block 282417](https://scanner-testnet-v3.portaldot.dev/#/blocks/282417?tab=events), tx `0xfa1c962f3796bdbb7e93d32110cc4d13ffac4dbe2e7c292280c98d075cbb6d2d` |
+| Payment token, escrow path: native asset [#43907 tUSDm](https://scanner-testnet-v3.portaldot.dev/#/assets/43907) (test token, no value) | ERC-20 precompile `0x0000ab8300000000000000000000000000010000` | [block 276610](https://scanner-testnet-v3.portaldot.dev/#/blocks/276610?tab=events) |
+| Payment token, sessions: native asset [#7777 pUSD](https://scanner-testnet-v3.portaldot.dev/#/assets/7777), Portaldot's own test dollar | ERC-20 precompile `0x00001e6100000000000000000000000000010000` | genesis of the test asset |
 
 | Step | Transaction | Block |
 |---|---|---|
@@ -78,12 +140,27 @@ PortaldotV3 testnet: EVM chain id `420420777`, `https://test-evm-rpc-v3.portaldo
 | **Refunded:** HTTP 404; refund in Solidity + anchor in ink!, **one Ethereum tx** | `0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314` | [276660](https://scanner-testnet-v3.portaldot.dev/#/blocks/276660?tab=events) |
 | **Buyer confirms** in ink! from its Ethereum key (the contract recomputes the Solidity request id) | `0x91d0a18a7aee958852e8f1903981a5c526910976c899c86192ef2f7970cd3297` | [276665](https://scanner-testnet-v3.portaldot.dev/#/blocks/276665?tab=events) |
 
-Both receipts come back **ACCEPT** from the verifier, with the ink! anchor checked. Try it (no key needed):
+Sessions, on the same testnet (everything in [`deployments/sessions.json`](deployments/sessions.json) and
+[`deployments/proof/`](deployments/proof)):
+
+| Step | Transaction | Block |
+|---|---|---|
+| Hosted provider registers endpoint 3 in Solidity and lists its public URL in ink!, **one Ethereum tx** | `0xeca4784ca0ba03ce7f110cbdc9af984dc2956f8d881edb5577261fcd7fd27b2c` | [282234](https://scanner-testnet-v3.portaldot.dev/#/blocks/282234?tab=events) |
+| Buyer opens the public demo session | `0x083042840d18dc07bf182cc0160181ed918246f38b69cd9687835783bd488572` | [282419](https://scanner-testnet-v3.portaldot.dev/#/blocks/282419?tab=events) |
+| **137 requests from 3 sessions settled**: redeem in Solidity + anchor in ink!, **one Ethereum tx**, signed in the Worker | `0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09` | [282559](https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events) |
+
+`MeterSession` was deployed twice: an independent review before launch found problems that needed a contract change, so
+`0xCc2aBc8A…` replaced `0xeA6bf3B9…`. The first deployment and its measurement are kept in `deployments/proof/`.
+
+All requests so far come from our own measurement key and from visitors of the live page; none of this is a claim of user demand.
+
+Both escrow receipts come back **ACCEPT** from the verifier, with the ink! anchor checked. Try it (no key needed):
 
 ```bash
 node bin/portal-meter.mjs verify deployments/receipts/served.json
 node bin/portal-meter.mjs status        # endpoints and provider record, read from the ink! contract
-node scripts/negative-checks.mjs        # 14 dry-runs: replays, strangers and tampered receipts are refused
+node scripts/negative-checks.mjs        # 14 dry-runs on the escrow path: replays, strangers and tampered receipts are refused
+node scripts/negative-checks-sessions.mjs   # 22 checks on sessions: the live seller and dry-runs on the live contract
 ```
 
 Everything is in [`deployments/testnet.json`](deployments/testnet.json). Signed receipts and verifier reports are in
@@ -96,7 +173,8 @@ The explorer indexes the Substrate side, so open the block rather than searching
 [block 276658](https://scanner-testnet-v3.portaldot.dev/#/blocks/276658?tab=events) show both VMs inside one extrinsic:
 `assets.Transferred`, `revive.ContractEmitted`, `utility.ItemCompleted`, `contracts.ContractEmitted`, `contracts.Called`,
 `utility.BatchCompleted`.
-The demo seller ran on `127.0.0.1` for these requests; the URLs in the registry say so. There is no public seller yet.
+The escrow demo seller ran on `127.0.0.1` for those requests, and the URLs of endpoints 1 and 2 say so. Sessions use the
+hosted seller, endpoint 3.
 
 ## Run it
 
@@ -104,8 +182,8 @@ Requirements: Node.js 20+, [Foundry](https://getfoundry.sh) for the contract tes
 
 ```bash
 npm ci --ignore-scripts
-(cd contracts/evm && forge build && forge test)   # 20 Solidity tests: unit, fuzz, invariant
-npm test                                           # 25 Node tests, incl. end to end on a local anvil chain
+(cd contracts/evm && forge build && forge test)   # 42 Solidity tests: unit, fuzz, invariant
+npm test                                           # 54 Node tests, incl. end to end on a local anvil chain
 node scripts/probe.mjs                             # re-checks the Portaldot facts this project relies on (read-only)
 ```
 
@@ -113,7 +191,7 @@ Against the testnet deployment (`deployments/testnet.json`):
 
 ```bash
 node bin/portal-meter.mjs status                                   # endpoints and provider record, no key
-node bin/portal-meter.mjs serve --keys provider.env                # the HTTP 402 seller on 127.0.0.1:8402
+node bin/portal-meter.mjs serve --keys provider.env                # the escrow seller on 127.0.0.1:8402
 node bin/portal-meter.mjs buy http://127.0.0.1:8402/v1/asset/7777 --keys buyer.env --out receipt.json
 node bin/portal-meter.mjs verify receipt.json                      # ACCEPT / REJECT, no key
 ```
@@ -133,18 +211,29 @@ node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env --no-ink    # EVM
 The ink! contract is built in CI (`cargo contract build --release`, cargo-contract 5.0.3); the bundle used for the
 deployment is committed under `contracts/ink/meter_registry/artifact/`.
 
+Sessions and the hosted seller:
+
+```bash
+node scripts/deploy-sessions.mjs --keys ~/portaldot_testnet.env --hosted ~/portaldot_hosted.env --plan    # then without --plan
+# set SESSION_CONTRACT and ENDPOINT_ID in worker/wrangler.toml, then from worker/:
+npx wrangler@4.151.1 deploy
+npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet key, from stdin
+```
+
 ## Repository
 
 | Path | What |
 |---|---|
-| `contracts/evm/` | `MeterSettlement.sol` (Foundry): endpoints, escrowed per-request payments, settle once, refunds |
+| `contracts/evm/` | `MeterSettlement.sol`: endpoints, escrowed payments, settle once, refunds. `MeterSession.sol`: prepaid budgets, vouchers, redeem |
 | `contracts/ink/meter_registry/` | `MeterRegistry` (ink! 5): endpoint URLs, outcome anchors, buyer feedback, reputation |
-| `src/` | seller (HTTP 402), buyer client, receipt verifier, protocol, EVM and ink! clients, cross-VM batch builder |
+| `src/` | metering core (`meter.mjs`), session protocol and client, escrow seller and buyer, verifier, SCALE encoder without polkadot.js, EVM and ink! clients |
+| `worker/` | the hosted seller on Cloudflare Workers |
+| `examples/` | a paid API in thirty lines |
 | `bin/portal-meter.mjs` | command line: `status`, `verify`, `buy`, `serve` |
 | `scripts/` | key generation (testnet only), network probe, deployment + live demo, pitch deck builder |
 | `test/` | Node tests, including end to end on a local anvil chain |
 | `demo/` | the live page (static, served by GitHub Pages) |
-| `docs/` | architecture, protocol, Portaldot V3 network notes |
+| `docs/` | architecture, sessions, protocol, Portaldot V3 network notes |
 | `pitch/` | architecture diagram and pitch deck |
 
 ## Credits and prior work
@@ -154,8 +243,9 @@ deployment is committed under `contracts/ink/meter_registry/artifact/`.
   Portaldot integration and the off-chain code in this repository were written for Portaldot during the Hacker House.
 - [forge-std](https://github.com/foundry-rs/forge-std) v1.16.2 (MIT/Apache-2.0), vendored unmodified under
   `contracts/evm/lib/`, tests only. [ink!](https://github.com/use-ink/ink) 5.1.1 (Apache-2.0).
-- [ethers](https://github.com/ethers-io/ethers.js) 6.16.0 (MIT) and [polkadot.js](https://github.com/polkadot-js/api)
-  16.5.6 (Apache-2.0), pinned in `package-lock.json`; the browser bundle of ethers is vendored under `demo/vendor/`.
+- [ethers](https://github.com/ethers-io/ethers.js) 6.16.0 (MIT), [polkadot.js](https://github.com/polkadot-js/api) 16.5.6
+  (Apache-2.0) and [@noble/hashes](https://github.com/paulmillr/noble-hashes) 1.8.0 (MIT), pinned in `package-lock.json`; the
+  browser bundle of ethers is vendored under `demo/vendor/`. The hosted seller runs on Cloudflare Workers.
 
 ## License
 

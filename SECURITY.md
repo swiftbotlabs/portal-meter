@@ -33,24 +33,36 @@ real payers a voice, but sybil-resistant reputation is out of scope.
 | Voucher copied from a pending batch to make it revert | `redeem` is provider-only |
 | A session key spending more than its budget | `redeem` refuses `cumulative` above the deposit; the seller checks the same before serving |
 | Malleable signatures | `s` must be in the lower half of the curve order, the length must be 65 |
+| A voucher the seller accepts but the contract cannot redeem | `validateVoucher` allows exactly what `ecrecover` does: v 27 or 28, low s. Found in review: ethers also tolerates other v bytes, which would have given a free session |
 | Provider redeeming what was not served | it holds at most one unserved voucher, because the next one needs the previous response. The client checks every receipt and stops signing on a mismatch |
-| Provider rewriting history | the head signed by the payer stops matching: `verifyLog` replays the public log against the `Redeemed` event |
-| Hostile token | state is final before every token call (tested with a token that re-enters `redeem`); an endpoint's token is fixed at registration, and it only affects sessions of that endpoint |
+| Provider rewriting history | the signed head stops matching: `verifyLog` replays the public log against the `Redeemed` event. It covers responses up to the one before the last redeemed request |
+| Provider or stranger taking the payer's storage deposit | whoever clears storage gets its deposit back, so only the payer can `close`, and the payer pays for all session storage at `open` |
+| Fee-on-transfer token draining a shared balance | `open` and `topUp` compare the balance before and after, and refuse a token that delivers less than asked |
+| Hostile token | state is final before every token call (tested with a token that re-enters `redeem`); an endpoint's token is fixed at registration, and a hostile token only moves itself |
 | Provider never redeems, payer stuck | after expiry plus 15 minutes the payer can close and take back what is unspent |
+| Payer closes before the provider redeems | the seller stops serving 30 minutes before expiry and redeems any session within an hour of it; the grace period adds 15 minutes |
+| Seller crashes on a method or URL a Web Request refuses | `metered` answers 400 instead of throwing |
+| Stranger holding a session's lock or using up limits | the signature is checked before the lock, and the global limit counts only requests that passed it |
+| Requests served while a chain read is in flight being rolled back | every write re-reads the row and merges |
 
 Hosted seller (`worker/`):
 - The provider key is a testnet key for this seller only, with a small tPOT balance, stored as a Worker secret. It holds no other funds.
 - `/admin/settle` needs a bearer token compared in constant time. Without it the route answers 404.
-- Per-address limits: 60 quotes, 30 paid requests, 240 free reads a minute, plus a global limit on paid requests.
-- Upstream calls are serialised with a 220 ms gap, so the public Portaldot nodes never see more than 5 requests a second from this
-  service, and the queue is capped at 40. Paid responses are cached for 15 seconds per path.
+- Per-address limits (a /64 for IPv6): 60 quotes, 30 paid requests, 240 free reads a minute, plus a global limit on paid requests.
+  A full limit table refuses new addresses instead of waving them through.
+- Sessions under 0.25 pUSD are refused, and an expiring session forces a batch only above 0.05 pUSD: every batch locks an anchor deposit.
+- Public reads go through a queue with a 260 ms gap and a cap of 40, settlement through its own with 1.1 s, so the public Portaldot nodes
+  see under 5 requests a second from this service and a flood of reads cannot starve settlement. Unknown session ids are remembered for
+  60 seconds. Answers and failures are cached for 15 seconds per path. Upstream calls time out after 10 seconds.
+- A session whose voucher reverts in a dry run is marked stuck, refused from then on and counted in `/health`, and does not hold up the
+  batch. A network error marks nothing. After sending a batch the seller keeps polling, and it reads the chain before the next one, so a
+  lost receipt cannot make it send the same voucher twice.
 - Input is validated before a quote is issued, and the seller only talks to the two configured nodes. No user-supplied URL is fetched.
 - The public demo key on the live page is derived from a public string on purpose. It can only sign vouchers for one session of test
   tokens, capped on-chain, and the only place that session pays is our own payee.
 
-Not covered: an endpoint token that charges a fee on transfer would make the contract's book exceed its balance for that token.
-Native assets do not do that. pallet-assets accounts have a minimum balance, so an amount below it cannot be paid to an empty
-account; the first redeem of a session must be at least that minimum (0.01 pUSD).
+Not covered: pallet-assets accounts have a minimum balance (0.01 pUSD), so a smaller amount cannot be paid to an account that holds
+none. The seller's price sits at that minimum, and a `close` that returns less than it to a payer holding no pUSD would revert.
 
 ## Seller
 

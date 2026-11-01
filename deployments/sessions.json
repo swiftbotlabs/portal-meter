@@ -110,7 +110,39 @@
       "hash": "0x083042840d18dc07bf182cc0160181ed918246f38b69cd9687835783bd488572",
       "block": 282419,
       "costTpot": "11.55261774057007508"
+    },
+    {
+      "label": "seller cron, unattended: 67 requests from 2 sessions, redeem + ink! anchor, one Ethereum tx",
+      "layer": "evm -> substrate",
+      "hash": "0xe388295c45e60931abadb2c8bc9d6b9dad805d4cea8b9cdfe6aeac729c3992db",
+      "block": 282470
+    },
+    {
+      "label": "137 requests from 3 sessions, redeem + ink! anchor, one Ethereum tx",
+      "layer": "evm -> substrate",
+      "hash": "0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09",
+      "block": 282559
     }
   ],
-  "publishedAt": "2026-11-01T20:55:18.991Z"
+  "publishedAt": "2026-11-01T20:55:18.991Z",
+  "measured": {
+    "tx": "0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09",
+    "block": 282559,
+    "requests": 137,
+    "sessions": 3,
+    "requestsInSession": 100,
+    "lockedPerRequest": "0.076",
+    "lockedTotal": "7.6",
+    "ratio": "100",
+    "anchorTpot": "3.68",
+    "openTpot": "11.55",
+    "backAtCloseTpot": "7.67",
+    "unattendedBatch": {
+      "tx": "0xe388295c45e60931abadb2c8bc9d6b9dad805d4cea8b9cdfe6aeac729c3992db",
+      "block": 282470,
+      "requests": 67,
+      "sessions": 2
+    },
+    "source": "deployments/proof/session-measure.json"
+  }
 }

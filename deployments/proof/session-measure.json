@@ -1,0 +1,71 @@
+{
+  "startedAt": "2026-11-01T21:02:26.518Z",
+  "price": "10000",
+  "steps": [
+    {
+      "step": "open",
+      "session": "0x58bb48f6d5a7de73670d624c91e509fac1503c4e7f57349ac727576530ab8bc2",
+      "requests": 100,
+      "budget": "1010000",
+      "expiresAt": 1793570244,
+      "tx": "0x0ea91df67068ebbd235012826367d26bc763f4973cd31e32d95a113277221222",
+      "block": 282490,
+      "buyerTpot": -11.552617737616318
+    },
+    {
+      "step": "open",
+      "session": "0x8ccb86f1ced497261ccc1602ae501c0ab8e5bf296c2680fbd2a5c1f6abe10b37",
+      "requests": 20,
+      "budget": "250000",
+      "expiresAt": 1793570250,
+      "tx": "0x1a81ea20e2da3d015342704c5682c1530957aa0432d8fdd809571e7c91a1a133",
+      "block": 282491,
+      "buyerTpot": -11.552617737574987
+    },
+    {
+      "step": "requests",
+      "session": "0x58bb48f6d5a7de73670d624c91e509fac1503c4e7f57349ac727576530ab8bc2",
+      "requests": 100,
+      "seconds": 327,
+      "onChainTransactions": 0
+    },
+    {
+      "step": "requests",
+      "session": "0x8ccb86f1ced497261ccc1602ae501c0ab8e5bf296c2680fbd2a5c1f6abe10b37",
+      "requests": 20,
+      "seconds": 63,
+      "onChainTransactions": 0
+    },
+    {
+      "step": "settle",
+      "tx": "0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09",
+      "block": 282559,
+      "requests": 137,
+      "providerTpot": -11.04366427324865
+    },
+    {
+      "step": "verify",
+      "session": "0x58bb48f6d5a7de73670d624c91e509fac1503c4e7f57349ac727576530ab8bc2",
+      "rows": 100,
+      "redemptions": 1,
+      "ok": true
+    },
+    {
+      "step": "verify",
+      "session": "0x8ccb86f1ced497261ccc1602ae501c0ab8e5bf296c2680fbd2a5c1f6abe10b37",
+      "rows": 20,
+      "redemptions": 1,
+      "ok": true
+    },
+    {
+      "step": "payee",
+      "pusdReceived": "1370000"
+    }
+  ],
+  "toClose": [
+    "0x58bb48f6d5a7de73670d624c91e509fac1503c4e7f57349ac727576530ab8bc2",
+    "0x8ccb86f1ced497261ccc1602ae501c0ab8e5bf296c2680fbd2a5c1f6abe10b37"
+  ],
+  "closableAt": 1793571564,
+  "finishedAt": "2026-11-01T21:09:25.748Z"
+}

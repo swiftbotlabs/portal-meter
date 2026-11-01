@@ -48,7 +48,16 @@ export class SessionClient {
   /** One paid GET. `onStep` receives each stage, for the live page. */
   async get(target, { onStep = () => {} } = {}) {
     const url = new URL(target);
-    const first = await this.fetch(url, { headers: { accept: 'application/json' } });
+    const send = async headers => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await this.fetch(url, { headers });
+        } catch (e) {
+          if (attempt >= (this.retries ?? 2)) throw e;
+        }
+      }
+    };
+    const first = await send({ accept: 'application/json' });
     if (first.status !== 402) return { status: first.status, body: new Uint8Array(await first.arrayBuffer()), receipt: null, charged: false };
     const hdr = first.headers.get(HEADER_REQUIRED);
     if (!hdr) throw new SessionError('402 without a PAYMENT-REQUIRED header');
@@ -62,15 +71,7 @@ export class SessionClient {
     });
     onStep('voucher', voucher);
 
-    const headers = { accept: 'application/json', [HEADER_VOUCHER]: b64json(voucher) };
-    let res = null;
-    for (let attempt = 0; res === null; attempt++) {
-      try {
-        res = await this.fetch(url, { headers });
-      } catch (e) {
-        if (attempt >= (this.retries ?? 2)) throw e;
-      }
-    }
+    const res = await send({ accept: 'application/json', [HEADER_VOUCHER]: b64json(voucher) });
     const body = new Uint8Array(await res.arrayBuffer());
     if (res.status !== 200) return { status: res.status, body, receipt: null, charged: false, quote: q, voucher };
     const rh = res.headers.get(HEADER_RESPONSE);
