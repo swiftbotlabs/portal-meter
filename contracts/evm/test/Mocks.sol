@@ -121,3 +121,26 @@ contract ReentrantToken is MockERC20 {
         return super.transfer(to, v);
     }
 }
+
+/// Calls back into MeterSession while it pays out, with the call data it was armed with.
+contract ReenterOnTransfer is MockERC20 {
+    address public target;
+    bytes public payload;
+    bool public attempted;
+    bool public succeeded;
+
+    constructor() MockERC20("Reenter", "RE", 6) {}
+
+    function arm(address t, bytes calldata p) external {
+        target = t;
+        payload = p;
+    }
+
+    function transfer(address to, uint256 v) public override returns (bool) {
+        if (target != address(0) && !attempted) {
+            attempted = true;
+            (succeeded,) = target.call(payload);
+        }
+        return super.transfer(to, v);
+    }
+}
