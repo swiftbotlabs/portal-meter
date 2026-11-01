@@ -12,7 +12,7 @@ node `3.0.0-dev-fddd43141f2`, genesis `0xd4f9acbcf7f52388d8b095abe3c198d19fc510e
 | EVM RPC | `https://test-evm-rpc-v3.portaldot.dev` (`web3_clientVersion` = `eth-rpc/main-fddd431`, Parity's eth-rpc adapter) |
 | EVM chain id | `420420777` (`0x190f1ca9`) |
 | Node console | https://node-console.portaldot.dev (polkadot.js apps; add `?rpc=wss://test-node-v3.portaldot.dev`) |
-| Substrate explorer | https://scanner-testnet-v3.portaldot.dev (indexes the Substrate side: search blocks and `5...` accounts) |
+| Substrate explorer | https://scanner-testnet-v3.portaldot.dev (hash routes: `/#/blocks/<n>?tab=events`, `/#/accounts/<5...>`, `/#/assets/<id>`; unsigned `revive.ethTransact` extrinsics have no page of their own, use the block's events tab) |
 | Token | tPOT, 14 decimals on Substrate, 18 on the EVM side (`Revive.NativeToEthRatio` = 10,000) |
 
 The endpoints reject the default User-Agent of Python's `urllib` (Cloudflare error 1010); browsers, Node.js `fetch`,

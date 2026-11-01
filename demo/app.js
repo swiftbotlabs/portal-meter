@@ -74,7 +74,7 @@ async function refreshNetwork() {
     kv($('network-kv'), [
       ['EVM chain id', `${parseInt(chainId, 16)} <span class="muted">(${esc(chainId)})</span>`],
       ['EVM block', block.toLocaleString()],
-      ['Substrate block', `${link(`${NET.explorer}/blocks/${parseInt(header.number, 16)}`, parseInt(header.number, 16).toLocaleString())}`],
+      ['Substrate block', `${link(`${NET.explorer}/#/blocks/${parseInt(header.number, 16)}`, parseInt(header.number, 16).toLocaleString())}`],
       ['runtime', `${esc(rv.specName)} ${esc(rv.specVersion)}`],
       ['gas price', `${BigInt(gasPrice).toLocaleString()} wei`],
       ['contract VMs', 'pallet-revive (EVM) + pallet-contracts (ink!/WASM)'],
@@ -95,7 +95,7 @@ async function refreshAsset(token) {
   const subSupply = details ? leU128(details, 128) : null; // owner, issuer, admin, freezer (4 x 32 bytes), then supply
   const md = meta ? decodeMetadata(meta) : { name: '?', symbol: '?', decimals: 0 };
   kv($('asset-kv'), [
-    ['asset', `${link(`${NET.explorer}/assets/${a.assetId}`, `#${a.assetId}`)} ${esc(md.name)} (${esc(md.symbol)}), ${md.decimals} decimals${token && token.assetKey ? '' : ' <span class="muted">· reference asset until ours is deployed</span>'}`],
+    ['asset', `${link(`${NET.explorer}/#/assets/${a.assetId}`, `#${a.assetId}`)} ${esc(md.name)} (${esc(md.symbol)}), ${md.decimals} decimals${token && token.assetKey ? '' : ' <span class="muted">· reference asset until ours is deployed</span>'}`],
     ['ERC-20 address', `<span class="mono">${esc(a.precompile)}</span>`],
     ['supply via EVM', `${formatUnits(evmSupply, md.decimals)} <span class="muted">totalSupply() on the precompile</span>`],
     ['supply via Substrate', subSupply === null ? 'n/a' : `${formatUnits(subSupply, md.decimals)} <span class="muted">Assets.Asset storage</span>`],
@@ -113,9 +113,9 @@ async function refreshContracts(d, md) {
   const [count, info] = await Promise.all([s.endpointCount(), reg ? reg.info().catch(e => ({ error: e.message })) : null]);
   kv($('contracts-kv'), [
     ['MeterSettlement (EVM)', `<span class="mono">${esc(d.settlement)}</span>`],
-    ['deployed in', `${link(`${NET.explorer}/blocks/${d.settlementBlock}`, `block ${d.settlementBlock}`)}`],
+    ['deployed in', `${link(`${NET.explorer}/#/blocks/${d.settlementBlock}`, `block ${d.settlementBlock}`)}`],
     ...(reg ? [
-      ['MeterRegistry (ink!)', link(`${NET.explorer}/accounts/${d.registry.address}`, short(d.registry.address, 8))],
+      ['MeterRegistry (ink!)', link(`${NET.explorer}/#/accounts/${d.registry.address}`, short(d.registry.address, 8))],
       ['registry knows', info.error ? esc(info.error) : `settlement ${short(info.settlement)} · ${info.endpoints} endpoints · ${info.anchors} outcomes anchored`],
     ] : [['MeterRegistry (ink!)', 'built and tested, not on the testnet yet']]),
     ['endpoints listed', String(count)],
@@ -161,7 +161,7 @@ function renderTxs(d) {
   const tx = d.transactions || [];
   if (!tx.length) return;
   $('txs').tBodies[0].innerHTML = tx.map(t => `<tr><td>${esc(t.label)}</td><td>${esc(t.layer)}</td>
-    <td>${t.block ? link(`${NET.explorer}/blocks/${t.block}`, t.block) : '-'}</td><td class="mono">${esc(t.hash)}</td></tr>`).join('');
+    <td>${t.block ? link(`${NET.explorer}/#/blocks/${t.block}?tab=events`, t.block) : '-'}</td><td class="mono">${esc(t.hash)}</td></tr>`).join('');
 }
 
 // ------------------------------------------------------------------ verifier

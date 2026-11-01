@@ -70,10 +70,9 @@ flowchart LR
 ## Cross-VM path
 
 A Solidity contract on pallet-revive cannot call a pallet or an ink! contract (we checked: a call from a contract
-to the runtime pallets address behaves like a call to an empty account). An **Ethereum transaction** can: the
-eth-rpc adapter turns a transaction sent to `0x6d6f646c70792f70616464720000000000000000` into
-`revive.ethSubstrateCall`, decodes its input as a SCALE-encoded runtime call and dispatches it with the sender's
-twin account as a signed origin.
+to the runtime pallets address behaves like a call to an empty account). An **Ethereum transaction** can: when a
+transaction is sent to `0x6d6f646c70792f70616464720000000000000000`, the runtime decodes its input as a SCALE-encoded
+runtime call and dispatches it (`revive.ethSubstrateCall`) with the sender's twin account as a signed origin.
 
 Portal Meter uses that for the provider's write path. One transaction, signed by the provider's Ethereum key:
 
@@ -85,6 +84,10 @@ utility.batchAll([
 ```
 
 `batchAll` is all-or-nothing: either the Solidity settlement and the ink! anchor both happen, or neither does.
+On chain this is one `revive.ethTransact` extrinsic whose events come from both VMs, for example
+[block 276658](https://scanner-testnet-v3.portaldot.dev/#/blocks/276658?tab=events): `assets.Transferred`,
+`revive.ContractEmitted`, `utility.ItemCompleted`, `contracts.ContractEmitted`, `contracts.Called`,
+`utility.BatchCompleted`.
 The same path lists endpoints in the registry and lets the buyer's Ethereum key call `rate` on the ink! contract.
 All of this ran on the testnet: see the transactions in the [README](../README.md#testnet-deployment). `eth_getLogs`
 returns the `Served` and `Refunded` events of these runtime-dispatched calls under the Ethereum transaction's hash, so
