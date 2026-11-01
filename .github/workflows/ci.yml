@@ -20,6 +20,8 @@ jobs:
     name: Solidity (Foundry unit, fuzz, invariant)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      FOUNDRY_OFFLINE: "false" # foundry.toml is offline for local runs; CI fetches solc 0.8.28
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -48,18 +50,24 @@ jobs:
           persist-credentials: false
       - name: Rust toolchain
         run: |
-          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rust-src --target wasm32-unknown-unknown
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rust-src,clippy --target wasm32-unknown-unknown
           rustup default "$RUST_TOOLCHAIN"
           rustc --version
-      - name: Cache cargo-contract
+      - name: Restore cargo-contract
         id: cc
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/.cargo/bin/cargo-contract
           key: cargo-contract-${{ env.CARGO_CONTRACT }}-rust-${{ env.RUST_TOOLCHAIN }}
       - name: Install cargo-contract
         if: steps.cc.outputs.cache-hit != 'true'
         run: cargo install cargo-contract --version "$CARGO_CONTRACT" --locked
+      - name: Save cargo-contract
+        if: steps.cc.outputs.cache-hit != 'true'
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cargo/bin/cargo-contract
+          key: cargo-contract-${{ env.CARGO_CONTRACT }}-rust-${{ env.RUST_TOOLCHAIN }}
       - name: Lockfile (committed Cargo.lock is used when present)
         working-directory: contracts/ink/meter_registry
         run: |
