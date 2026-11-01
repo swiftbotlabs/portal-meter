@@ -22,9 +22,11 @@ export function pendingSessions(states) {
  * When to spend deposit on a batch: enough requests are waiting, or the oldest has waited long enough.
  * Every batch locks one ink! anchor deposit, so this is the knob between cost and freshness.
  */
-export function shouldSettle(states, { now, minRequests = 25, maxWaitSec = 6 * 3600, minGapSec = 1800, lastSettledAt = 0 }) {
+export function shouldSettle(states, { now, minRequests = 25, maxWaitSec = 6 * 3600, minGapSec = 1800, expiryMarginSec = 3600, lastSettledAt = 0 }) {
   const p = pendingSessions(states);
   if (p.length === 0) return false;
+  // after expiry plus the grace period the payer can close the session, and an unredeemed voucher is worth nothing
+  if (p.some(s => s.expiresAt - now < expiryMarginSec)) return true;
   if (now - lastSettledAt < minGapSec) return false;
   const waiting = p.reduce((n, s) => n + s.count - (s.redeemedCount ?? 0), 0);
   return waiting >= minRequests || now - (p[0].updatedAt ?? 0) >= maxWaitSec;

@@ -126,10 +126,13 @@ contract MeterSession {
     }
 
     // ---------------------------------------------------------------- provider
-    /// @notice Pay out a voucher. Anyone may submit it: the money can only reach the endpoint's payee, and only
-    ///         the part of `cumulative` not paid yet.
+    /// @notice Pay out a voucher: the part of `cumulative` not paid yet goes to the endpoint's payee. Only the provider
+    ///         may submit it, so that nobody can copy a voucher from a pending batch and make that batch revert.
     function redeem(bytes32 id, uint96 cumulative, uint32 count, bytes32 head, bytes calldata signature) external {
         Session storage s = _open(id);
+        uint32 endpointId = s.endpointId;
+        (address provider, address payee, address token,,,) = endpoints.endpoint(endpointId);
+        if (msg.sender != provider) revert NotAllowed();
         if (_recover(voucherDigest(id, cumulative, count, head), signature) != s.signer) revert BadSignature();
         uint96 done = s.redeemed;
         if (cumulative <= done || count <= s.count) revert NotNewer();
@@ -137,8 +140,6 @@ contract MeterSession {
         uint96 paid = cumulative - done;
         s.redeemed = cumulative;
         s.count = count;
-        uint32 endpointId = s.endpointId;
-        (, address payee, address token,,,) = endpoints.endpoint(endpointId);
         _call(token, abi.encodeWithSelector(0xa9059cbb, payee, uint256(paid)));
         emit Redeemed(id, endpointId, head, cumulative, paid, count);
     }

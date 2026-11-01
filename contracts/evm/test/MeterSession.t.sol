@@ -42,6 +42,11 @@ contract MeterSessionTest is Test {
         id = m.open(endpointId, NONCE, signer, BUDGET, uint40(block.timestamp + 1 days));
     }
 
+    function _redeem(bytes32 id, uint96 cum, uint32 count, bytes32 head, bytes memory sig) internal {
+        vm.prank(provider);
+        m.redeem(id, cum, count, head, sig);
+    }
+
     function _sign(uint256 key, bytes32 id, uint96 cum, uint32 count, bytes32 head) internal view returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, m.voucherDigest(id, cum, count, head));
         return abi.encodePacked(r, s, v);
@@ -103,30 +108,41 @@ contract MeterSessionTest is Test {
         bytes32 h1 = keccak256("one");
         vm.expectEmit(true, true, false, true);
         emit Redeemed(id, endpointId, h1, 30_000, 30_000, 3);
-        m.redeem(id, 30_000, 3, h1, _sign(signerKey, id, 30_000, 3, h1));
+        _redeem(id, 30_000, 3, h1, _sign(signerKey, id, 30_000, 3, h1));
         assertEq(usd.balanceOf(payee), 30_000);
         bytes32 h2 = keccak256("two");
-        vm.prank(other); // anyone may submit: the money still goes to the payee
-        m.redeem(id, 50_000, 5, h2, _sign(signerKey, id, 50_000, 5, h2));
+        _redeem(id, 50_000, 5, h2, _sign(signerKey, id, 50_000, 5, h2));
         assertEq(usd.balanceOf(payee), 50_000);
         (,,,,, uint96 r, uint32 c) = m.session(id);
         assertEq(r, 50_000);
         assertEq(c, 5);
     }
 
+    function test_redeem_onlyTheProvider() public {
+        bytes32 id = _open();
+        bytes32 h = keccak256("x");
+        bytes memory sig = _sign(signerKey, id, 30_000, 3, h);
+        vm.prank(other);
+        vm.expectRevert(MeterSession.NotAllowed.selector);
+        m.redeem(id, 30_000, 3, h, sig);
+        vm.prank(buyer);
+        vm.expectRevert(MeterSession.NotAllowed.selector);
+        m.redeem(id, 30_000, 3, h, sig);
+    }
+
     function test_redeem_refusesReplayOlderAndEqual() public {
         bytes32 id = _open();
         bytes32 h = keccak256("x");
         bytes memory sig = _sign(signerKey, id, 30_000, 3, h);
-        m.redeem(id, 30_000, 3, h, sig);
+        _redeem(id, 30_000, 3, h, sig);
         vm.expectRevert(MeterSession.NotNewer.selector);
-        m.redeem(id, 30_000, 3, h, sig);
+        _redeem(id, 30_000, 3, h, sig);
         bytes memory older = _sign(signerKey, id, 20_000, 2, h);
         vm.expectRevert(MeterSession.NotNewer.selector);
-        m.redeem(id, 20_000, 2, h, older);
+        _redeem(id, 20_000, 2, h, older);
         bytes memory sameCount = _sign(signerKey, id, 40_000, 3, h);
         vm.expectRevert(MeterSession.NotNewer.selector);
-        m.redeem(id, 40_000, 3, h, sameCount);
+        _redeem(id, 40_000, 3, h, sameCount);
         assertEq(usd.balanceOf(payee), 30_000);
     }
 
@@ -135,7 +151,7 @@ contract MeterSessionTest is Test {
         bytes32 h = keccak256("x");
         bytes memory sig = _sign(signerKey, id, BUDGET + 1, 1, h);
         vm.expectRevert(MeterSession.OverBudget.selector);
-        m.redeem(id, BUDGET + 1, 1, h, sig);
+        _redeem(id, BUDGET + 1, 1, h, sig);
     }
 
     function test_redeem_refusesAnythingNotSignedByTheSessionKey() public {
@@ -143,16 +159,16 @@ contract MeterSessionTest is Test {
         bytes32 h = keccak256("x");
         bytes memory wrongKey = _sign(0xB0B, id, 30_000, 3, h);
         vm.expectRevert(MeterSession.BadSignature.selector);
-        m.redeem(id, 30_000, 3, h, wrongKey);
+        _redeem(id, 30_000, 3, h, wrongKey);
         bytes memory good = _sign(signerKey, id, 30_000, 3, h);
         vm.expectRevert(MeterSession.BadSignature.selector); // tampered amount
-        m.redeem(id, 30_001, 3, h, good);
+        _redeem(id, 30_001, 3, h, good);
         vm.expectRevert(MeterSession.BadSignature.selector); // tampered count
-        m.redeem(id, 30_000, 4, h, good);
+        _redeem(id, 30_000, 4, h, good);
         vm.expectRevert(MeterSession.BadSignature.selector); // tampered head
-        m.redeem(id, 30_000, 3, keccak256("y"), good);
+        _redeem(id, 30_000, 3, keccak256("y"), good);
         vm.expectRevert(MeterSession.BadSignature.selector); // truncated
-        m.redeem(id, 30_000, 3, h, hex"00");
+        _redeem(id, 30_000, 3, h, hex"00");
     }
 
     function test_redeem_refusesHighS() public {
@@ -162,7 +178,7 @@ contract MeterSessionTest is Test {
         uint256 n = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
         bytes memory malleable = abi.encodePacked(r, bytes32(n - uint256(s)), v == 27 ? uint8(28) : uint8(27));
         vm.expectRevert(MeterSession.BadSignature.selector);
-        m.redeem(id, 30_000, 3, h, malleable);
+        _redeem(id, 30_000, 3, h, malleable);
     }
 
     function test_voucher_cannotCrossSessions() public {
@@ -172,14 +188,14 @@ contract MeterSessionTest is Test {
         bytes32 h = keccak256("x");
         bytes memory sig = _sign(signerKey, id, 30_000, 3, h);
         vm.expectRevert(MeterSession.BadSignature.selector);
-        m.redeem(id2, 30_000, 3, h, sig);
+        _redeem(id2, 30_000, 3, h, sig);
     }
 
     function test_redeem_worksInTheGraceWindow() public {
         bytes32 id = _open();
         vm.warp(block.timestamp + 1 days + 5 minutes);
         bytes32 h = keccak256("late");
-        m.redeem(id, 30_000, 3, h, _sign(signerKey, id, 30_000, 3, h));
+        _redeem(id, 30_000, 3, h, _sign(signerKey, id, 30_000, 3, h));
         assertEq(usd.balanceOf(payee), 30_000);
     }
 
@@ -189,7 +205,7 @@ contract MeterSessionTest is Test {
         vm.prank(buyer);
         m.topUp(id, 500_000);
         bytes32 h = keccak256("x");
-        m.redeem(id, BUDGET + 1, 1, h, _sign(signerKey, id, BUDGET + 1, 1, h));
+        _redeem(id, BUDGET + 1, 1, h, _sign(signerKey, id, BUDGET + 1, 1, h));
         assertEq(usd.balanceOf(payee), BUDGET + 1);
         vm.prank(buyer);
         vm.expectRevert(MeterSession.ZeroAmount.selector);
@@ -203,7 +219,7 @@ contract MeterSessionTest is Test {
     function test_close_payerAfterExpiryAndGraceOnly() public {
         bytes32 id = _open();
         bytes32 h = keccak256("x");
-        m.redeem(id, 30_000, 3, h, _sign(signerKey, id, 30_000, 3, h));
+        _redeem(id, 30_000, 3, h, _sign(signerKey, id, 30_000, 3, h));
         vm.prank(buyer);
         vm.expectRevert(MeterSession.TooEarly.selector);
         m.close(id);
@@ -237,7 +253,7 @@ contract MeterSessionTest is Test {
         vm.prank(provider);
         m.close(id);
         vm.expectRevert(MeterSession.NoSession.selector);
-        m.redeem(id, 30_000, 3, h, sig);
+        _redeem(id, 30_000, 3, h, sig);
         vm.prank(buyer);
         vm.expectRevert(MeterSession.SessionExists.selector); // old vouchers stay dead
         m.open(endpointId, NONCE, signer, BUDGET, uint40(block.timestamp + 1 days));
@@ -282,6 +298,7 @@ contract MeterSessionTest is Test {
         bytes32 h = keccak256("x");
         bytes memory sig = _sign(signerKey, id, 30_000, 3, h);
         t.arm(address(m), abi.encodeCall(m.redeem, (id, 30_000, 3, h, sig))); // the same voucher again, mid-payout
+        vm.prank(provider);
         m.redeem(id, 30_000, 3, h, sig);
         assertTrue(t.attempted());
         assertFalse(t.succeeded());
@@ -295,7 +312,7 @@ contract MeterSessionTest is Test {
         vm.prank(buyer);
         bytes32 id = m.open(endpointId, NONCE, signer, budget, uint40(block.timestamp + 1 days));
         bytes32 h = keccak256("x");
-        m.redeem(id, spent, 1, h, _sign(signerKey, id, spent, 1, h));
+        _redeem(id, spent, 1, h, _sign(signerKey, id, spent, 1, h));
         uint256 before = usd.balanceOf(buyer);
         vm.prank(provider);
         m.close(id);
@@ -311,6 +328,7 @@ contract SessionHandler is Test {
     MockERC20 usd;
     uint32 endpointId;
     address payee;
+    address provider;
     uint256 constant KEY = 0xA11CE;
     bytes32[] public ids;
     mapping(bytes32 => uint32) public counts;
@@ -318,11 +336,12 @@ contract SessionHandler is Test {
     uint256 public paid;
     uint256 public returned;
 
-    constructor(MeterSession m_, MockERC20 usd_, uint32 endpointId_, address payee_) {
+    constructor(MeterSession m_, MockERC20 usd_, uint32 endpointId_, address payee_, address provider_) {
         m = m_;
         usd = usd_;
         endpointId = endpointId_;
         payee = payee_;
+        provider = provider_;
         usd.approve(address(m), type(uint256).max);
     }
 
@@ -343,6 +362,7 @@ contract SessionHandler is Test {
         uint32 n = counts[id] + 1;
         bytes32 h = keccak256(abi.encode(id, n));
         (uint8 v, bytes32 rr, bytes32 s) = vm.sign(KEY, m.voucherDigest(id, c, n, h));
+        vm.prank(provider);
         m.redeem(id, c, n, h, abi.encodePacked(rr, s, v));
         counts[id] = n;
         paid += c - r;
@@ -354,7 +374,7 @@ contract SessionHandler is Test {
         (,,,, uint96 d, uint96 r,) = m.session(id);
         if (d == 0) return;
         vm.warp(block.timestamp + 2 days);
-        m.close(id);
+        m.close(id); // this handler is the payer
         returned += d - r;
     }
 }
@@ -371,7 +391,7 @@ contract MeterSessionInvariant is Test {
         m = new MeterSession(IEndpoints(address(settlement)));
         usd = new MockERC20("Meter Test USD", "tUSDm", 6);
         uint32 e = settlement.registerEndpoint(payee, address(usd), 1, 600);
-        h = new SessionHandler(m, usd, e, payee);
+        h = new SessionHandler(m, usd, e, payee, address(this));
         targetContract(address(h));
     }
 

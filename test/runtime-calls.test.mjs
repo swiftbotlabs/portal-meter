@@ -32,7 +32,7 @@ test('batchAll(revive.call, contracts.call) is byte-identical to polkadot.js', (
 });
 
 const state = (o = {}) => ({
-  session: '0x' + '11'.repeat(32), count: 5, redeemedCount: 0, redeemedCum: '0', updatedAt: 1000,
+  session: '0x' + '11'.repeat(32), count: 5, redeemedCount: 0, redeemedCum: '0', updatedAt: 1000, expiresAt: 10_000_000,
   lastVoucher: { session: '0x' + '11'.repeat(32), cumulative: '50000', count: 5, head: '0x' + '22'.repeat(32), signature: '0x' + '33'.repeat(65) }, ...o,
 });
 
@@ -47,6 +47,7 @@ test('shouldSettle: enough requests, or waited long enough, never twice in the g
   assert.equal(shouldSettle([state({ updatedAt: now - 7 * 3600 })], { now }), true); // old
   assert.equal(shouldSettle([state({ count: 30, updatedAt: now })], { now }), true); // many
   assert.equal(shouldSettle([state({ count: 30, updatedAt: now })], { now, lastSettledAt: now - 60 }), false); // just settled
+  assert.equal(shouldSettle([state({ updatedAt: now, expiresAt: now + 600 })], { now, lastSettledAt: now - 60 }), true); // about to expire
 });
 
 test('settleInput pairs one redeem and one anchor per session', () => {

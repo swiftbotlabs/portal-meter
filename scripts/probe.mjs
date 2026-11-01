@@ -6,6 +6,8 @@ import { encodeAddress } from '@polkadot/util-crypto';
 import { twinAccountId, h160OfAccount } from './lib/addr.mjs';
 import { NETWORK, precompileAddress } from '../src/config.mjs';
 
+import { CALLS_SPEC_3002 } from '../src/runtime-calls.mjs';
+
 const args = process.argv.slice(2);
 const assetId = Number(args[args.indexOf('--asset') + 1] || 7777);
 
@@ -60,6 +62,12 @@ try {
   const remark = api.tx.system.remark('0x70').method.toHex();
   out.ethToPalletEstimate = await evm('eth_estimateGas', [{ from: h160, to: out.runtimePalletsAddress, data: remark }]);
   out.gasPrice = parseInt(await evm('eth_gasPrice'), 16);
+  // call indices used by the polkadot.js-free encoder in src/runtime-calls.mjs
+  const live = { utilityBatchAll: [...api.tx.utility.batchAll.callIndex], reviveCall: [...api.tx.revive.call.callIndex], contractsCall: [...api.tx.contracts.call.callIndex] };
+  out.runtimeCalls = {
+    specVersion: api.runtimeVersion.specVersion.toNumber(), live,
+    matchesEncoder: Object.entries(live).every(([k, v]) => JSON.stringify(v) === JSON.stringify(CALLS_SPEC_3002[k])),
+  };
 } finally {
   await api.disconnect();
 }
