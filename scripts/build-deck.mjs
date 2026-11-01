@@ -87,7 +87,7 @@ slide('', `
     <ul class="big">
       <li><b>Users:</b> data/API providers on Portaldot (indexers, RPC and analytics services, AI tool endpoints) and the apps and agents that call them.</li>
       <li><b>First product:</b> the paid Portaldot data API in this repo (cross-VM account and asset views): a real endpoint other builders can call per request.</li>
-      <li><b>Revenue:</b> an optional protocol fee on settlement (basis points, set per deployment) and a hosted seller for providers who do not want to run one.</li>
+      <li><b>Revenue (planned):</b> a small protocol fee on settlement (basis points, per deployment; not in the testnet contract yet) and a hosted seller for providers who do not want to run one.</li>
       <li><b>Growth:</b> drop-in middleware for Express/Fastify, listing in the Portaldot ecosystem directory, wallet support for 402 quotes.</li>
     </ul>
   </div>`);
