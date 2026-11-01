@@ -1,0 +1,103 @@
+name: CI
+
+# No secrets and no keys: CI never signs anything. The node tests run against a local anvil chain.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evm:
+    name: Solidity (Foundry unit, fuzz, invariant)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@82dee4ba654bd2146511f85f0d013af94670c4de # v1.4.0
+        with:
+          version: v1.8.5
+      - name: Build (sizes)
+        working-directory: contracts/evm
+        run: forge build --sizes
+      - name: Test
+        working-directory: contracts/evm
+        run: forge test -vv
+
+  ink:
+    name: ink! registry (unit tests + release build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      RUST_TOOLCHAIN: "1.86.0"
+      CARGO_CONTRACT: "5.0.3"
+      CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rust-src --target wasm32-unknown-unknown
+          rustup default "$RUST_TOOLCHAIN"
+          rustc --version
+      - name: Cache cargo-contract
+        id: cc
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cargo/bin/cargo-contract
+          key: cargo-contract-${{ env.CARGO_CONTRACT }}-rust-${{ env.RUST_TOOLCHAIN }}
+      - name: Install cargo-contract
+        if: steps.cc.outputs.cache-hit != 'true'
+        run: cargo install cargo-contract --version "$CARGO_CONTRACT" --locked
+      - name: Lockfile (committed Cargo.lock is used when present)
+        working-directory: contracts/ink/meter_registry
+        run: |
+          if [ -f Cargo.lock ]; then echo "LOCKED=--locked" >> "$GITHUB_ENV"; else cargo generate-lockfile; echo "LOCKED=" >> "$GITHUB_ENV"; fi
+      - name: Unit tests
+        working-directory: contracts/ink/meter_registry
+        run: cargo test $LOCKED
+      - name: Release build
+        working-directory: contracts/ink/meter_registry
+        run: |
+          cargo contract build --release $LOCKED
+          ls -l target/ink
+          sha256sum target/ink/meter_registry.wasm target/ink/meter_registry.contract
+          python3 - <<'PY'
+          import json
+          b = json.load(open('target/ink/meter_registry.contract'))
+          print('code hash', b['source']['hash'], 'wasm bytes', (len(b['source']['wasm']) - 2) // 2)
+          print('compiler', b['source']['compiler'], b['source'].get('build_info'))
+          PY
+      - name: Check the bundled artifact in the repository matches this build
+        working-directory: contracts/ink/meter_registry
+        run: |
+          if [ -f artifact/meter_registry.contract ]; then
+            python3 - <<'PY'
+          import json
+          a = json.load(open('artifact/meter_registry.contract'))['source']['hash']
+          b = json.load(open('target/ink/meter_registry.contract'))['source']['hash']
+          print('committed', a, 'built', b)
+          if a != b:
+              print('::warning::committed ink! artifact differs from this build (expected after source changes until it is refreshed)')
+          PY
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: meter_registry
+          path: |
+            contracts/ink/meter_registry/target/ink/meter_registry.contract
+            contracts/ink/meter_registry/target/ink/meter_registry.wasm
+            contracts/ink/meter_registry/target/ink/meter_registry.json
+            contracts/ink/meter_registry/Cargo.lock
+          if-no-files-found: error

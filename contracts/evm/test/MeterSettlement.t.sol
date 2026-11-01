@@ -282,6 +282,18 @@ contract MeterSettlementTest is Test {
         assertEq(t.balanceOf(address(s)), 50);
     }
 
+    // ------------------------------------------------------------ cross-VM vector
+    /// The same vector is asserted by the ink! registry (request_id_for) and the JS client (test/protocol.test.mjs).
+    function test_requestId_crossVmVector() public {
+        vm.chainId(420420777);
+        address at = 0x5e77Ee0000000000000000000000000000000001;
+        deployCodeTo("MeterSettlement.sol:MeterSettlement", at);
+        bytes32 rid = MeterSettlement(at).requestIdFor(0x0118d896dC979963341e9449218e63E158CB6AbA, 1, bytes32(
+            0xabababababababababababababababababababababababababababababababab
+        ));
+        assertEq(rid, 0x2aa9da812dcbc42abb80854df02c687e70b72bce5d18979ce95bc8d00372fcbd);
+    }
+
     // ------------------------------------------------------------ fuzz
     function testFuzz_requestIdBoundToPayer(address payer, bytes32 nonce) public {
         vm.assume(payer != address(0) && payer != address(s) && payer.code.length == 0);

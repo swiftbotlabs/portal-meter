@@ -1,0 +1,20 @@
+[package]
+name = "meter_registry"
+version = "0.1.0"
+authors = ["Swift Bot Labs"]
+edition = "2021"
+license = "MIT"
+description = "Portal Meter provider registry and reputation (ink! 5, pallet-contracts on Portaldot V3)"
+publish = false
+
+[dependencies]
+ink = { version = "=5.1.1", default-features = false }
+
+[lib]
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = ["ink/std"]
+ink-as-dependency = []
+e2e-tests = []

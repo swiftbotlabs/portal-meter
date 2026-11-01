@@ -9,3 +9,4 @@ target/
 __pycache__/
 *.bak-*
 broadcast/
+contracts/ink/meter_registry/target/
