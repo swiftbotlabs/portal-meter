@@ -36,6 +36,30 @@ jobs:
         working-directory: contracts/evm
         run: forge test -vv
 
+  node:
+    name: Seller, buyer, verifier (Node.js on a local anvil chain)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      FOUNDRY_OFFLINE: "false"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - uses: foundry-rs/foundry-toolchain@82dee4ba654bd2146511f85f0d013af94670c4de # v1.4.0
+        with:
+          version: v1.8.5
+      - name: Compile contracts (artifacts used by the tests)
+        working-directory: contracts/evm
+        run: forge build
+      - name: Install pinned dependencies (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test
+        run: npm test
+
   ink:
     name: ink! registry (unit tests + release build)
     runs-on: ubuntu-24.04

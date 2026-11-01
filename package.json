@@ -7,7 +7,7 @@
   "license": "MIT",
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node --test --test-concurrency=1 test/"
+    "test": "node --test --test-concurrency=1 --test-timeout=120000 test/*.test.mjs"
   },
   "dependencies": {
     "@polkadot/api": "16.5.6",
