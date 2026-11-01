@@ -1,6 +1,6 @@
 # Portal Meter
 
-[![CI](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml)
+[![CI](https://github.com/swiftbotlabs/portal-meter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swiftbotlabs/portal-meter/actions/workflows/ci.yml)
 
 **Sell any API per call on Portaldot V3, settled across both of its contract VMs.**
 
@@ -238,7 +238,7 @@ npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet
 
 ## Credits and prior work
 
-- Builds on our MIT-licensed [HSK Meter](https://github.com/swiftbotlab/hsk-meter) (Oct 2026): the request-id
+- Builds on our MIT-licensed [HSK Meter](https://github.com/swiftbotlabs/hsk-meter) (Oct 2026): the request-id
   binding and refund-on-failure ideas come from it. The contracts, the ink! registry, the cross-VM settlement, the
   Portaldot integration and the off-chain code in this repository were written for Portaldot during the Hacker House.
 - [forge-std](https://github.com/foundry-rs/forge-std) v1.16.2 (MIT/Apache-2.0), vendored unmodified under
