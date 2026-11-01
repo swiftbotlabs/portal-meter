@@ -26,8 +26,21 @@ export function canonical(value) {
     .map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
 }
 
+// base64 of UTF-8, in Node.js and in browsers (the demo page imports this module directly)
+function toB64(str) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(str, 'utf8').toString('base64');
+  let bin = '';
+  for (const b of new TextEncoder().encode(str)) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function fromB64(b64) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(b64, 'base64').toString('utf8');
+  return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+}
+
 export function b64json(obj) {
-  return Buffer.from(canonical(obj), 'utf8').toString('base64');
+  return toB64(canonical(obj));
 }
 
 /** Decode a base64 JSON header with a size cap. Throws on anything unexpected. */
@@ -37,7 +50,7 @@ export function parseB64json(value, maxBytes = MAX_HEADER_BYTES) {
   if (!/^[A-Za-z0-9+/=]+$/.test(value)) throw new ProtocolError('header is not base64');
   let obj;
   try {
-    obj = JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
+    obj = JSON.parse(fromB64(value));
   } catch {
     throw new ProtocolError('header is not JSON');
   }

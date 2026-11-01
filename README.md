@@ -10,9 +10,13 @@ a provider's track record before paying.
 
 By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & Middleware**.
 
-> **Status (2026-11-01): in development.** The EVM settlement contract and its test suite are in this repository.
-> The ink! registry, the HTTP seller, the buyer CLI, the verifier and the testnet deployment follow in the next
-> commits. Testnet addresses will be listed here once deployed.
+**Live page:** [swiftbotlab.github.io/portal-meter/demo/](https://swiftbotlab.github.io/portal-meter/demo/) reads the
+PortaldotV3 testnet from your browser (network, the native-asset ERC-20 precompile, contracts, endpoints, provider
+record, payments) and includes a free receipt verifier.
+
+> **Status (2026-11-01): in development.** The EVM settlement contract, the ink! registry, the HTTP seller, the
+> buyer client, the receipt verifier and the live page are in this repository, with tests. The testnet deployment
+> is next; its addresses and transactions will be listed here.
 
 ## Why Portaldot
 
@@ -30,9 +34,12 @@ Measured network facts are in [docs/PORTALDOT_V3_NOTES.md](docs/PORTALDOT_V3_NOT
 | Path | What |
 |---|---|
 | `contracts/evm/` | `MeterSettlement.sol` (Foundry): endpoints, escrowed per-request payments, settle once, refunds |
+| `src/` | seller (HTTP 402), buyer client, receipt verifier, protocol, EVM and ink! clients, cross-VM batch builder |
+| `test/` | Node tests, including end to end on a local anvil chain |
+| `demo/` | the live page (static, served by GitHub Pages) |
+| `contracts/ink/` | `MeterRegistry` (ink! 5): endpoint URLs, outcome anchors, buyer feedback |
 | `docs/` | network notes, architecture, protocol |
 | `scripts/` | key generation (testnet only), read-only network probe |
-| `src/` | shared configuration (network constants, precompile addresses) |
 
 ## Run the tests
 

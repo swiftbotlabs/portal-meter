@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal Meter · live on Portaldot V3 testnet</title>
+  <meta name="description" content="Pay-per-request API settlement on Portaldot V3: Solidity escrow on the EVM, ink! provider registry on WASM. Live testnet state and a free receipt verifier.">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "ethers": "./vendor/ethers-6.16.0.min.js" } }
+  </script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 16 L24 9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
+        </span>
+        <div>
+          <h1>Portal Meter</h1>
+          <p class="tag">Pay-per-request API settlement on Portaldot V3, across both of its VMs</p>
+        </div>
+      </div>
+      <div class="net" id="net"><span class="dot"></span><span id="net-text">connecting to PortaldotV3 testnet…</span></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro">
+      <p>An API provider lists an endpoint with a price. A client pays for <b>one request</b> in an ERC-20 (here a
+        Portaldot <b>native asset</b>, reached through the pallet-assets ERC-20 precompile). The payment waits in
+        escrow in a Solidity contract on Portaldot's EVM. The provider settles it once it has served the request,
+        or refunds it. The outcome is anchored in an <b>ink!</b> registry on Portaldot's WASM VM in the same
+        transaction. Everything on this page is read live from the testnet by your browser.</p>
+      <div class="flow" aria-label="request flow">
+        <div class="step"><b>1</b> GET → <code>402</code> quote</div>
+        <div class="step"><b>2</b> <code>pay()</code> on EVM</div>
+        <div class="step"><b>3</b> retry with signed proof</div>
+        <div class="step"><b>4</b> served once + receipt</div>
+        <div class="step"><b>5</b> <code>settle</code> + ink! <code>record</code>, one tx</div>
+      </div>
+    </section>
+
+    <section id="pending" class="card notice" hidden>
+      <h2>Testnet deployment pending</h2>
+      <p>The contracts are not deployed to the PortaldotV3 testnet yet. The panels below already read the live
+        chain: the network itself and Portaldot's native-asset ERC-20 precompile.</p>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Network</h2>
+        <dl class="kv" id="network-kv"></dl>
+      </div>
+      <div class="card">
+        <h2>Contracts</h2>
+        <dl class="kv" id="contracts-kv"><dt>status</dt><dd>loading…</dd></dl>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Payment token: a native asset seen as an ERC-20</h2>
+      <p class="muted">Portaldot exposes every <code>pallet-assets</code> token to Solidity at
+        <code>0x{asset id}…00010000</code>. The supply below is read twice: once through the EVM (<code>totalSupply()</code>
+        on the precompile) and once from Substrate storage.</p>
+      <dl class="kv" id="asset-kv"></dl>
+    </section>
+
+    <section class="card">
+      <h2>Endpoints and provider record</h2>
+      <p class="muted">Price and payee come from <code>MeterSettlement</code> (EVM). The URL and the served / refunded /
+        confirmed / disputed counts come from <code>MeterRegistry</code> (ink!), keyed by the provider's EVM address.</p>
+      <div class="table-scroll"><table id="endpoints"><thead><tr>
+        <th>#</th><th>endpoint</th><th>price</th><th>provider</th><th>served</th><th>refunded</th><th>confirmed</th><th>disputed</th><th>score</th>
+      </tr></thead><tbody><tr><td colspan="9" class="muted">no endpoints yet</td></tr></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Activity</h2>
+      <div class="totals" id="totals"></div>
+      <div class="table-scroll"><table id="activity"><thead><tr>
+        <th>block</th><th>event</th><th>request</th><th>amount</th><th>detail</th><th>tx</th>
+      </tr></thead><tbody><tr><td colspan="6" class="muted">no activity yet</td></tr></tbody></table></div>
+    </section>
+
+    <section class="card" id="verify">
+      <h2>Verify a receipt</h2>
+      <p class="muted">Paste the <code>PAYMENT-RESPONSE</code> header (base64) or the receipt JSON. Add the response body to
+        check its hash. Nothing leaves your browser except read-only calls to the Portaldot testnet nodes.</p>
+      <label for="receipt-in">Receipt</label>
+      <textarea id="receipt-in" rows="5" spellcheck="false" placeholder="eyJ2IjoicG9ydGFsLW1ldGVyLzEi…  or  {&quot;v&quot;:&quot;portal-meter/1&quot;, …}"></textarea>
+      <label for="body-in">Response body (optional)</label>
+      <textarea id="body-in" rows="3" spellcheck="false" placeholder="the JSON body exactly as received"></textarea>
+      <div class="row">
+        <button id="verify-btn" type="button">Verify</button>
+        <button id="sample-btn" type="button" class="ghost" hidden>Load a live receipt</button>
+      </div>
+      <div id="verdict" aria-live="polite"></div>
+    </section>
+
+    <section class="card">
+      <h2>Deployment transactions</h2>
+      <div class="table-scroll"><table id="txs"><thead><tr><th>step</th><th>layer</th><th>block</th><th>tx</th></tr></thead>
+        <tbody><tr><td colspan="4" class="muted">pending</td></tr></tbody></table></div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Portal Meter by Swift Bot Labs · <a href="https://github.com/swiftbotlab/portal-meter">source on GitHub</a> (MIT) ·
+      chain data from <code>test-evm-rpc-v3.portaldot.dev</code> and <code>test-node-v3.portaldot.dev</code></p>
+  </footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
