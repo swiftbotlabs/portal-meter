@@ -16,6 +16,9 @@ By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & M
 PortaldotV3 testnet from your browser (network, the native-asset ERC-20 precompile, contracts, endpoints, provider
 record, payments) and includes a free receipt verifier.
 
+**Demo video (2:41, voice-over and captions):** [watch in the browser](https://swiftbotlab.github.io/portal-meter/demo/portal-meter-demo.mp4).
+**Pitch deck:** [PDF](https://swiftbotlab.github.io/portal-meter/pitch/portal-meter-deck.pdf).
+
 > **Live on the PortaldotV3 testnet since 2026-11-01:** both contracts, a real paid request and a real refund, each
 > settled in Solidity and anchored in ink! in one Ethereum transaction. See [Testnet deployment](#testnet-deployment).
 
@@ -87,7 +90,7 @@ Everything is in [`deployments/testnet.json`](deployments/testnet.json). Signed 
 [`deployments/receipts/`](deployments/receipts); receipts, events and the negative checks are archived in
 [`deployments/proof/`](deployments/proof), because the public RPC prunes old transaction receipts. Earlier runs on the
 same contract are kept too: `evm-*.json` (plain Solidity settlement) and `xvm-served.json` (settlement + a Substrate
-remark in one Ethereum transaction).
+remark in one Ethereum transaction), and `cli-*.json` from the commands below.
 
 The explorer indexes the Substrate side, so open the block rather than searching for a `0x` hash. The events of
 [block 276658](https://scanner-testnet-v3.portaldot.dev/#/blocks/276658?tab=events) show both VMs inside one extrinsic:

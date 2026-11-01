@@ -1,0 +1,29 @@
+{
+  "receipt": {
+    "amount": "10000",
+    "block": 276733,
+    "endpointId": 2,
+    "issuedAt": 1793532206,
+    "network": "eip155:420420777",
+    "nonce": "0xd9c43f3f5bffa99013c037ace8c7620f52d755709964b3d6c647d9a3eea92215",
+    "outcome": "refunded",
+    "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "provider": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "receiptHash": "0x4a6a33ad31e9e6886d4415999178b870a76e38acadfac45299afc039bc3b9b6b",
+    "refundReason": 3,
+    "registry": {
+      "address": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4",
+      "kind": "ink"
+    },
+    "requestHash": "0xf1f6b5949c68d2d450e558aa855bae9f4e56e34b72157522324bb2297a784b86",
+    "requestId": "0x2dabd16a3a5906049b758ed998e9f1408fa058bf31a55776b2f6b314c68d8c84",
+    "responseHash": "0x310761d9c09e8f653998e158eb6ca84e7beeea233b243be2ae7575a96220f770",
+    "settledVia": "xvm",
+    "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "signature": "0x687b4a1379d79ea406f25151c87d5d6762642c622a5aaad18a7c9d0536f7c0803d4e47a660962eff9032e121362af8e2c03f430d4137da7d74d97d1478ec9e131b",
+    "token": "0x0000ab8300000000000000000000000000010000",
+    "tx": "0x679758fd453fa1f86d2fd821a74c65386c1a020642235ae507c9f8f6098ee84b",
+    "v": "portal-meter/1"
+  },
+  "body": "{\n  \"error\": \"asset 99999 does not exist\",\n  \"refunded\": true,\n  \"receipt\": {\n    \"v\": \"portal-meter/1\",\n    \"network\": \"eip155:420420777\",\n    \"settlement\": \"0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e\",\n    \"registry\": {\n      \"kind\": \"ink\",\n      \"address\": \"5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4\"\n    },\n    \"provider\": \"0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599\",\n    \"endpointId\": 2,\n    \"requestId\": \"0x2dabd16a3a5906049b758ed998e9f1408fa058bf31a55776b2f6b314c68d8c84\",\n    \"nonce\": \"0xd9c43f3f5bffa99013c037ace8c7620f52d755709964b3d6c647d9a3eea92215\",\n    \"payer\": \"0x0118d896dC979963341e9449218e63E158CB6AbA\",\n    \"amount\": \"10000\",\n    \"token\": \"0x0000ab8300000000000000000000000000010000\",\n    \"requestHash\": \"0xf1f6b5949c68d2d450e558aa855bae9f4e56e34b72157522324bb2297a784b86\",\n    \"responseHash\": \"0x310761d9c09e8f653998e158eb6ca84e7beeea233b243be2ae7575a96220f770\",\n    \"outcome\": \"refunded\",\n    \"receiptHash\": \"0x4a6a33ad31e9e6886d4415999178b870a76e38acadfac45299afc039bc3b9b6b\",\n    \"tx\": \"0x679758fd453fa1f86d2fd821a74c65386c1a020642235ae507c9f8f6098ee84b\",\n    \"block\": 276733,\n    \"settledVia\": \"xvm\",\n    \"refundReason\": 3,\n    \"issuedAt\": 1793532206,\n    \"signature\": \"0x687b4a1379d79ea406f25151c87d5d6762642c622a5aaad18a7c9d0536f7c0803d4e47a660962eff9032e121362af8e2c03f430d4137da7d74d97d1478ec9e131b\"\n  }\n}\n"
+}

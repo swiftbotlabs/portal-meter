@@ -146,5 +146,54 @@
       "reason": "3",
       "byProvider": "true"
     }
+  },
+  {
+    "event": "Paid",
+    "block": 276725,
+    "tx": "0x5b5df5d09ce6a9486b04b5005fdb0081f3443854d81da637489cb1359167d0fc",
+    "args": {
+      "requestId": "0x7de23153f19a2137131d7c698b306394f7131de4d7fd7d0f42935551e406eaa5",
+      "endpointId": "2",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "10000",
+      "nonce": "0x139901a6bec6a1ea98bf30e2f6d987b2879a1992fde38c319fdf6a264c7e3b22"
+    }
+  },
+  {
+    "event": "Served",
+    "block": 276726,
+    "tx": "0x4ec9ea34d8075adf582f731b25289c1a1e0e120f5176d9138584b348414f226a",
+    "args": {
+      "requestId": "0x7de23153f19a2137131d7c698b306394f7131de4d7fd7d0f42935551e406eaa5",
+      "endpointId": "2",
+      "payee": "0x77df5A7c0375bE0A492C109CcaFB96551fa8Ca5C",
+      "amount": "10000",
+      "responseHash": "0x47c7ca4b9f7ceca854354f9398f85cef5ff1122bb678629b016f9d37a5bcdba8"
+    }
+  },
+  {
+    "event": "Paid",
+    "block": 276730,
+    "tx": "0xdc4c3c8def47f2534b28637b1eb111ff3e34ff2c7131ffe8b02fcf6f21382f5d",
+    "args": {
+      "requestId": "0x2dabd16a3a5906049b758ed998e9f1408fa058bf31a55776b2f6b314c68d8c84",
+      "endpointId": "2",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "10000",
+      "nonce": "0xd9c43f3f5bffa99013c037ace8c7620f52d755709964b3d6c647d9a3eea92215"
+    }
+  },
+  {
+    "event": "Refunded",
+    "block": 276733,
+    "tx": "0x679758fd453fa1f86d2fd821a74c65386c1a020642235ae507c9f8f6098ee84b",
+    "args": {
+      "requestId": "0x2dabd16a3a5906049b758ed998e9f1408fa058bf31a55776b2f6b314c68d8c84",
+      "endpointId": "2",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "10000",
+      "reason": "3",
+      "byProvider": "true"
+    }
   }
 ]

@@ -1,0 +1,28 @@
+{
+  "receipt": {
+    "amount": "10000",
+    "block": 276726,
+    "endpointId": 2,
+    "issuedAt": 1793532163,
+    "network": "eip155:420420777",
+    "nonce": "0x139901a6bec6a1ea98bf30e2f6d987b2879a1992fde38c319fdf6a264c7e3b22",
+    "outcome": "served",
+    "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "provider": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "receiptHash": "0x56ec3de7c77b14b50d6e8d6d7c8fd75293e622c7e5da63144580e3f11e185cd6",
+    "registry": {
+      "address": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4",
+      "kind": "ink"
+    },
+    "requestHash": "0x87fff93754b2b2876cf2c7ee33fc6305ab993f29bdc88b43cdff0240ff16c517",
+    "requestId": "0x7de23153f19a2137131d7c698b306394f7131de4d7fd7d0f42935551e406eaa5",
+    "responseHash": "0x47c7ca4b9f7ceca854354f9398f85cef5ff1122bb678629b016f9d37a5bcdba8",
+    "settledVia": "xvm",
+    "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "signature": "0xc5101be5aa21c8adfc8c66a767fa181504d570707580e13853e2379586ddcf4d17024451bc3b79434f1584668aaa7667e2ae14a37e968f044725f3cd8ebc9eab1c",
+    "token": "0x0000ab8300000000000000000000000000010000",
+    "tx": "0x4ec9ea34d8075adf582f731b25289c1a1e0e120f5176d9138584b348414f226a",
+    "v": "portal-meter/1"
+  },
+  "body": "{\n  \"at\": {\n    \"number\": 276725,\n    \"hash\": \"0xb366c9077d44bd631b401108ed8c8507fff63d339641b86d97471e683cad3f17\"\n  },\n  \"assetId\": 43907,\n  \"owner\": \"5ETkpnDAeRU46becz38vSSP42vWoBnzZ2e4FFRbG6W3hVBdC\",\n  \"supply\": \"1000000000\",\n  \"accounts\": 3,\n  \"minBalance\": \"1\",\n  \"status\": \"Live\",\n  \"name\": \"Portal Meter Test USD\",\n  \"symbol\": \"tUSDm\",\n  \"decimals\": 6,\n  \"erc20\": {\n    \"precompile\": \"0x0000ab8300000000000000000000000000010000\",\n    \"totalSupply\": \"1000000000\",\n    \"matchesSubstrate\": true\n  }\n}\n"
+}
