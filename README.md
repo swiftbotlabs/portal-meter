@@ -15,16 +15,16 @@ that buyers can check before they pay. Two ways to pay share that design:
 
 By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & Middleware**.
 
-**Live page:** [swiftbotlab.github.io/portal-meter/demo/](https://swiftbotlab.github.io/portal-meter/demo/) buys a real API
+**Live page:** [portal-meter.swiftbotlab.workers.dev/demo/](https://portal-meter.swiftbotlab.workers.dev/demo/) buys a real API
 call from your browser with no wallet, reads both VMs directly, and includes a free receipt verifier.
 **Hosted seller:** [portal-meter.swiftbotlab.workers.dev](https://portal-meter.swiftbotlab.workers.dev/) (a paid Portaldot
 data API at 0.01 pUSD per call, on the testnet).
-**Demo video (2:30, voice-over and captions):** [MP4](https://swiftbotlab.github.io/portal-meter/demo/portal-meter-demo.mp4). **Pitch deck:**
-[PDF](https://swiftbotlab.github.io/portal-meter/pitch/portal-meter-deck.pdf).
+**Demo video (2:30, voice-over and captions):** [MP4](https://portal-meter.swiftbotlab.workers.dev/demo/portal-meter-demo.mp4). **Pitch deck:**
+[PDF](https://portal-meter.swiftbotlab.workers.dev/pitch/portal-meter-deck.pdf).
 
 ## Check it in two minutes
 
-1. Open the [live page](https://swiftbotlab.github.io/portal-meter/demo/) and press **Buy one request**. A public test key signs
+1. Open the [live page](https://portal-meter.swiftbotlab.workers.dev/demo/) and press **Buy one request**. A public test key signs
    a voucher in your browser, the seller checks it and answers: HTTP 402, then 200, no wallet and no gas.
 2. Press **Replay the session log against the chain**. It replays the public log, compares it with the signed head in the `Redeemed`
    event and reads the ink! anchor: ACCEPT, with every check listed.

@@ -33,7 +33,7 @@ slide('title', `
   <div class="kicker">Portaldot Hacker House 2026 · Modular Cloud &amp; Middleware</div>
   <h1>Portal Meter</h1>
   <p class="lead">Sell any API per call on Portaldot V3,<br>settled across both of its contract VMs.</p>
-  <p class="links">github.com/swiftbotlab/portal-meter · swiftbotlab.github.io/portal-meter/demo</p>`);
+  <p class="links">github.com/swiftbotlab/portal-meter · portal-meter.swiftbotlab.workers.dev/demo</p>`);
 
 slide('', `
   <h2>The problem</h2>
@@ -121,7 +121,7 @@ slide('proof', `
 slide('proof', `
   <h2>Live on the PortaldotV3 testnet</h2>
   ${dep ? `<table>${proofRows.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="mono">${esc(short(b, 10))}</td><td>${esc(c)}</td></tr>`).join('')}</table>
-  <p class="note">All transactions with blocks: deployments/testnet.json · live page: swiftbotlab.github.io/portal-meter/demo · explorer ${esc(EXPLORER)}</p>`
+  <p class="note">All transactions with blocks: deployments/testnet.json · live page: portal-meter.swiftbotlab.workers.dev/demo · explorer ${esc(EXPLORER)}</p>`
     : `<div class="placeholder"><b>PLACEHOLDER: filled after the testnet deployment</b><br>
        MeterSettlement address and deploy tx · MeterRegistry (ink!) address · native asset id ·
        endpoint registration tx (Solidity + ink! in one Ethereum tx) · one served request (pay, settle + anchor) ·
