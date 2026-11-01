@@ -10,3 +10,5 @@ __pycache__/
 *.bak-*
 broadcast/
 contracts/ink/meter_registry/target/
+deployments/testnet.partial.json
+deployments/.seller-state.json*
