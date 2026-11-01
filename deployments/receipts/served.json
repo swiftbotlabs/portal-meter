@@ -1,0 +1,118 @@
+{
+  "name": "served",
+  "request": "/v1/account/5C69HXuCHWTgFcDRUAmwEqgWoXdVwAfmJspoda2yZWXcwE8P",
+  "status": 200,
+  "payTx": "0x38aaaf8a83481db8f420d8a5ff2e88e70b35e7c9f5cd81a3c0d30c42903005a9",
+  "approveTx": "0xca1867b45d46335dfe2c4b47254b4be6aff6cc01f3563897f99da7c55a68962b",
+  "receipt": {
+    "amount": "25000",
+    "block": 276617,
+    "endpointId": 1,
+    "issuedAt": 1793531484,
+    "network": "eip155:420420777",
+    "nonce": "0x785547c21f723bca6f1862b5d400e6048038f8c8a3b940499f742ca42c96d128",
+    "outcome": "served",
+    "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "provider": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "receiptHash": "0x4e5cd5ae013654e54c844b05ecdf5e40eb17207832522e0da46ef0acd58893f8",
+    "registry": {
+      "address": null,
+      "kind": "none"
+    },
+    "requestHash": "0xd4feb92df378e1d68fba88c709bd2a91f3896ef052551171ec70996fb70938ab",
+    "requestId": "0x242fa2129d9c4184b54620f53a17637252610d6a670007d21f1e4cf97191b199",
+    "responseHash": "0xd872e232c1d00f165a9800c54641fcc2c7a497aac9d757717f76a85017f7809a",
+    "settledVia": "evm",
+    "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "signature": "0x11b876ed0249213448f81d9cd22864bda5c39034e384fe432104f60b8b6ff4a244602bf7e8255b951bf470b142f81ae2654812e44ada3caa4130a70edc9bebb41c",
+    "token": "0x0000ab8300000000000000000000000000010000",
+    "tx": "0xa013c5400ea7c4e26bc90dd20a046a063921e7af2afb3a86f36cad0d30124713",
+    "v": "portal-meter/1"
+  },
+  "body": "{\n  \"at\": {\n    \"number\": 276616,\n    \"hash\": \"0xd9cbc4ff5591598f6e5b9cc0e1d63c3752fbb566b5666e9fdc846ae587766783\"\n  },\n  \"input\": \"5C69HXuCHWTgFcDRUAmwEqgWoXdVwAfmJspoda2yZWXcwE8P\",\n  \"substrate\": {\n    \"ss58\": \"5C69HXuCHWTgFcDRUAmwEqgWoXdVwAfmJspoda2yZWXcwE8P\",\n    \"accountId\": \"0x0118d896dc979963341e9449218e63e158cb6abaeeeeeeeeeeeeeeeeeeeeeeee\",\n    \"ethDerived\": true,\n    \"nonce\": 2,\n    \"free\": \"3717717460313482\",\n    \"reserved\": \"10000000000000\",\n    \"frozen\": \"0\"\n  },\n  \"evm\": {\n    \"address\": \"0x0118d896dC979963341e9449218e63E158CB6AbA\",\n    \"balanceWei\": \"37077174603134820320\",\n    \"nonce\": 2,\n    \"codeBytes\": 0,\n    \"isContract\": false\n  },\n  \"mapping\": {\n    \"rule\": \"keccak256(accountId)[12..]\",\n    \"mappedAccount\": null\n  },\n  \"nativeAssets\": [\n    {\n      \"assetId\": 43907,\n      \"balance\": \"999975000\"\n    }\n  ]\n}\n",
+  "verification": {
+    "verdict": "ACCEPT",
+    "checks": [
+      {
+        "name": "receipt format",
+        "ok": true,
+        "detail": "portal-meter/1"
+      },
+      {
+        "name": "network",
+        "ok": true,
+        "detail": "eip155:420420777 (expected eip155:420420777)"
+      },
+      {
+        "name": "settlement contract",
+        "ok": true,
+        "detail": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e"
+      },
+      {
+        "name": "provider signature",
+        "ok": true,
+        "detail": "signed by 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599"
+      },
+      {
+        "name": "receipt hash",
+        "ok": true,
+        "detail": "0x4e5cd5ae013654e54c844b05ecdf5e40eb17207832522e0da46ef0acd58893f8"
+      },
+      {
+        "name": "request id bound to payer",
+        "ok": true,
+        "detail": "keccak256(chainId, settlement, payer, endpointId, nonce)"
+      },
+      {
+        "name": "response body hash",
+        "ok": true,
+        "detail": "0xd872e232c1d00f165a9800c54641fcc2c7a497aac9d757717f76a85017f7809a"
+      },
+      {
+        "name": "endpoint provider on-chain",
+        "ok": true,
+        "detail": "endpoint 1 provider 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599"
+      },
+      {
+        "name": "endpoint token",
+        "ok": true,
+        "detail": "0x0000ab8300000000000000000000000000010000"
+      },
+      {
+        "name": "payment status",
+        "ok": true,
+        "detail": "on-chain: served"
+      },
+      {
+        "name": "payment payer",
+        "ok": true,
+        "detail": "0x0118d896dC979963341e9449218e63E158CB6AbA"
+      },
+      {
+        "name": "payment endpoint",
+        "ok": true,
+        "detail": "1"
+      },
+      {
+        "name": "Paid event",
+        "ok": true,
+        "detail": "tx 0x38aaaf8a83481db8f420d8a5ff2e88e70b35e7c9f5cd81a3c0d30c42903005a9, amount 25000"
+      },
+      {
+        "name": "Served event",
+        "ok": true,
+        "detail": "tx 0xa013c5400ea7c4e26bc90dd20a046a063921e7af2afb3a86f36cad0d30124713, payee 0x77df5A7c0375bE0A492C109CcaFB96551fa8Ca5C"
+      },
+      {
+        "name": "settlement tx matches receipt",
+        "ok": true,
+        "detail": "0xa013c5400ea7c4e26bc90dd20a046a063921e7af2afb3a86f36cad0d30124713"
+      },
+      {
+        "name": "ink! registry anchor",
+        "ok": null,
+        "detail": "no registry configured"
+      }
+    ]
+  }
+}

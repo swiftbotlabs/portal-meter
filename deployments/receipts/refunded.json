@@ -1,0 +1,119 @@
+{
+  "name": "refunded",
+  "request": "/v1/asset/1043907",
+  "status": 404,
+  "payTx": "0xcacb9a74ee80cfc806722fb4b859422719f630d9bc5a1debf2abf4a42c16dab0",
+  "approveTx": null,
+  "receipt": {
+    "amount": "10000",
+    "block": 276619,
+    "endpointId": 2,
+    "issuedAt": 1793531497,
+    "network": "eip155:420420777",
+    "nonce": "0xf89abd75375e7e95a146d31f927dcb1837d86cbb64be887a36b4951a97b75948",
+    "outcome": "refunded",
+    "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "provider": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "receiptHash": "0xe9d42e938253a87fec5180587378079f10b5fb582f13f83755e3a8824e23ee6e",
+    "refundReason": 3,
+    "registry": {
+      "address": null,
+      "kind": "none"
+    },
+    "requestHash": "0x7b70fb45423e438641bcf407117c96af1e486d84d345059d2e2779b2f4ae9804",
+    "requestId": "0x6eb795b683212e23fabe6339c5cffe8bd62edd58af93be57fffdc903f88721e6",
+    "responseHash": "0x107eee6b0e503d8faa5fe9278abbbccd2eb61f00a52672680e77cbedd4609d83",
+    "settledVia": "evm",
+    "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "signature": "0x9ebc3dd336e4180885558d33ff1becae901e1e2c4a7ca6f744562f27cadf147d374cf56f6176563a26f487ef20431d476c33abb04fa1119409efbcbc716376d91b",
+    "token": "0x0000ab8300000000000000000000000000010000",
+    "tx": "0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf",
+    "v": "portal-meter/1"
+  },
+  "body": "{\n  \"error\": \"asset 1043907 does not exist\",\n  \"refunded\": true,\n  \"receipt\": {\n    \"v\": \"portal-meter/1\",\n    \"network\": \"eip155:420420777\",\n    \"settlement\": \"0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e\",\n    \"registry\": {\n      \"kind\": \"none\",\n      \"address\": null\n    },\n    \"provider\": \"0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599\",\n    \"endpointId\": 2,\n    \"requestId\": \"0x6eb795b683212e23fabe6339c5cffe8bd62edd58af93be57fffdc903f88721e6\",\n    \"nonce\": \"0xf89abd75375e7e95a146d31f927dcb1837d86cbb64be887a36b4951a97b75948\",\n    \"payer\": \"0x0118d896dC979963341e9449218e63E158CB6AbA\",\n    \"amount\": \"10000\",\n    \"token\": \"0x0000ab8300000000000000000000000000010000\",\n    \"requestHash\": \"0x7b70fb45423e438641bcf407117c96af1e486d84d345059d2e2779b2f4ae9804\",\n    \"responseHash\": \"0x107eee6b0e503d8faa5fe9278abbbccd2eb61f00a52672680e77cbedd4609d83\",\n    \"outcome\": \"refunded\",\n    \"receiptHash\": \"0xe9d42e938253a87fec5180587378079f10b5fb582f13f83755e3a8824e23ee6e\",\n    \"tx\": \"0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf\",\n    \"block\": 276619,\n    \"settledVia\": \"evm\",\n    \"refundReason\": 3,\n    \"issuedAt\": 1793531497,\n    \"signature\": \"0x9ebc3dd336e4180885558d33ff1becae901e1e2c4a7ca6f744562f27cadf147d374cf56f6176563a26f487ef20431d476c33abb04fa1119409efbcbc716376d91b\"\n  }\n}\n",
+  "verification": {
+    "verdict": "ACCEPT",
+    "checks": [
+      {
+        "name": "receipt format",
+        "ok": true,
+        "detail": "portal-meter/1"
+      },
+      {
+        "name": "network",
+        "ok": true,
+        "detail": "eip155:420420777 (expected eip155:420420777)"
+      },
+      {
+        "name": "settlement contract",
+        "ok": true,
+        "detail": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e"
+      },
+      {
+        "name": "provider signature",
+        "ok": true,
+        "detail": "signed by 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599"
+      },
+      {
+        "name": "receipt hash",
+        "ok": true,
+        "detail": "0xe9d42e938253a87fec5180587378079f10b5fb582f13f83755e3a8824e23ee6e"
+      },
+      {
+        "name": "request id bound to payer",
+        "ok": true,
+        "detail": "keccak256(chainId, settlement, payer, endpointId, nonce)"
+      },
+      {
+        "name": "response body hash",
+        "ok": null,
+        "detail": "refund receipt"
+      },
+      {
+        "name": "endpoint provider on-chain",
+        "ok": true,
+        "detail": "endpoint 2 provider 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599"
+      },
+      {
+        "name": "endpoint token",
+        "ok": true,
+        "detail": "0x0000ab8300000000000000000000000000010000"
+      },
+      {
+        "name": "payment status",
+        "ok": true,
+        "detail": "on-chain: refunded"
+      },
+      {
+        "name": "payment payer",
+        "ok": true,
+        "detail": "0x0118d896dC979963341e9449218e63E158CB6AbA"
+      },
+      {
+        "name": "payment endpoint",
+        "ok": true,
+        "detail": "2"
+      },
+      {
+        "name": "Paid event",
+        "ok": true,
+        "detail": "tx 0xcacb9a74ee80cfc806722fb4b859422719f630d9bc5a1debf2abf4a42c16dab0, amount 10000"
+      },
+      {
+        "name": "Refunded event",
+        "ok": true,
+        "detail": "tx 0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf, reason 3, by provider"
+      },
+      {
+        "name": "refund tx matches receipt",
+        "ok": true,
+        "detail": "0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf"
+      },
+      {
+        "name": "ink! registry anchor",
+        "ok": null,
+        "detail": "no registry configured"
+      }
+    ]
+  }
+}

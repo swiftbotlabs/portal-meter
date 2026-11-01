@@ -42,7 +42,7 @@ const die = msg => {
 const dep = loadDeployment();
 if (!dep && cmd !== 'verify') die('deployments/testnet.json not found: deploy first (scripts/deploy-testnet.mjs)');
 const evm = makeProvider(NETWORK.evmRpc, NETWORK.chainId);
-const rawRegistry = dep ? new RawInkRegistry({ rpc: NETWORK.substrateHttp, accountId: dep.registry.accountId, origin: dep.readOrigin, selectors: dep.registry.selectors }) : null;
+const rawRegistry = dep?.registry ? new RawInkRegistry({ rpc: NETWORK.substrateHttp, accountId: dep.registry.accountId, origin: dep.readOrigin, selectors: dep.registry.selectors }) : null;
 
 function keyWallet(defVar) {
   const file = flag('--keys');
@@ -56,6 +56,7 @@ function keyWallet(defVar) {
 async function inkClient(readOrigin) {
   const api = await ApiPromise.create({ provider: new WsProvider(NETWORK.substrateWs, 2500, {}, 30_000), noInitWarn: true });
   const bundle = JSON.parse(readFileSync(join(PATHS.root, 'contracts', 'ink', 'meter_registry', 'artifact', 'meter_registry.contract'), 'utf8'));
+  if (!dep.registry) return { api, ink: null };
   const contract = new ContractPromise(api, new Abi(bundle, api.registry.getChainProperties()), dep.registry.address);
   return { api, ink: new InkRegistry({ api, contract, readOrigin }) };
 }
@@ -63,15 +64,20 @@ async function inkClient(readOrigin) {
 if (cmd === 'status') {
   const s = settlementContract(dep.settlement, evm);
   const n = Number(await s.endpointCount());
-  const info = await rawRegistry.info();
+  const info = rawRegistry ? await rawRegistry.info() : null;
   console.log(`network      ${NETWORK.name} (EVM chain id ${NETWORK.chainId})`);
   console.log(`settlement   ${dep.settlement} (Solidity, pallet-revive)`);
-  console.log(`registry     ${dep.registry.address} (ink!, pallet-contracts): ${info.endpoints} endpoints, ${info.anchors} anchors`);
+  console.log(info ? `registry     ${dep.registry.address} (ink!, pallet-contracts): ${info.endpoints} endpoints, ${info.anchors} anchors` : 'registry     not deployed');
   console.log(`token        native asset #${dep.token.assetId} ${dep.token.symbol} at ${dep.token.precompile}`);
   for (let i = 1; i <= n; i++) {
     const ep = await readEndpoint(s, i);
+    const price = `${formatUnits(ep.price, dep.token.decimals)} ${dep.token.symbol}`;
+    if (!rawRegistry) {
+      console.log(`endpoint ${i}   ${price} · provider ${ep.provider} · payee ${ep.payee}`);
+      continue;
+    }
     const [rec, rep] = await Promise.all([rawRegistry.endpoint(ep.provider, i), rawRegistry.reputation(ep.provider, i)]);
-    console.log(`endpoint ${i}   ${formatUnits(ep.price, dep.token.decimals)} ${dep.token.symbol} · ${rec ? rec.uri : '(not listed)'} · served ${rep.served}, refunded ${rep.refunded}, confirmed ${rep.confirmed}, disputed ${rep.disputed}, score ${(rep.scoreBps / 100).toFixed(1)} %`);
+    console.log(`endpoint ${i}   ${price} · ${rec ? rec.uri : '(not listed)'} · served ${rep.served}, refunded ${rep.refunded}, confirmed ${rep.confirmed}, disputed ${rep.disputed}, score ${(rep.scoreBps / 100).toFixed(1)} %`);
   }
 } else if (cmd === 'verify') {
   const src = positional[0];
@@ -101,12 +107,12 @@ if (cmd === 'status') {
   const wallet = keyWallet('PORTALDOT_EVM_BUYER_KEY');
   const r = await buy(url, {
     wallet, expect: { chainId: NETWORK.chainId, settlement: dep.settlement, token: dep.token.precompile },
-    maxPrice: parseUnits(flag('--max', '0.05'), dep.token.decimals), registry: rawRegistry, log: m => console.error(`· ${m}`),
+    maxPrice: parseUnits(flag('--max', '0.05'), dep.token.decimals), registry: rawRegistry || undefined, log: m => console.error(`· ${m}`),
   });
   console.error(`· HTTP ${r.status}`);
   process.stdout.write(r.body);
   if (r.receipt) {
-    const v = await verifyReceipt(r.receipt, { evm, expect: { chainId: NETWORK.chainId, settlement: dep.settlement }, registry: rawRegistry, body: r.receipt.outcome === 'served' ? r.body : undefined, fromBlock: dep.fromBlock });
+    const v = await verifyReceipt(r.receipt, { evm, expect: { chainId: NETWORK.chainId, settlement: dep.settlement }, registry: rawRegistry || undefined, body: r.receipt.outcome === 'served' ? r.body : undefined, fromBlock: dep.fromBlock });
     console.error(formatReport(v));
     const out = flag('--out');
     if (out) writeFileSync(out, JSON.stringify({ receipt: r.receipt, body: r.body.toString('utf8') }, null, 2) + '\n');
@@ -114,7 +120,7 @@ if (cmd === 'status') {
 } else if (cmd === 'serve') {
   const wallet = keyWallet('PORTALDOT_EVM_PROVIDER_KEY');
   const { api, ink } = await inkClient(twinSs58(wallet.address));
-  const mode = flag('--mode', 'xvm');
+  const mode = dep.registry ? flag('--mode', 'xvm') : 'evm';
   const settler = mode === 'evm'
     ? new EvmSettler({ wallet, settlementAddress: dep.settlement })
     : new XvmSettler({ api, wallet, settlementAddress: dep.settlement, inkRegistry: ink });
@@ -123,7 +129,7 @@ if (cmd === 'status') {
     chain: { chainId: NETWORK.chainId, settlementAddress: dep.settlement, settlement: settlementContract(dep.settlement, evm) },
     provider: wallet.address, signer: wallet, settler,
     store: new Store(flag('--state', join(PATHS.root, 'deployments', '.seller-state.json'))),
-    registry: { kind: 'ink', address: dep.registry.address },
+    registry: dep.registry ? { kind: 'ink', address: dep.registry.address } : { kind: 'none', address: null },
     routes: makeRoutes({
       upstream: portaldotUpstream(api, evm, { assets: [dep.token.assetId] }), token: dep.token.precompile,
       tokenSymbol: dep.token.symbol, decimals: dep.token.decimals,

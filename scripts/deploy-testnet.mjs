@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // End-to-end PortaldotV3 testnet deployment and live demo, resumable step by step.
 //
-//   node scripts/deploy-testnet.mjs --keys <0600 env file> [--plan] [--only step,step]
+//   node scripts/deploy-testnet.mjs --keys <0600 env file> [--plan] [--only step,step] [--no-ink]
+//
+// --no-ink deploys the EVM half only (for a small tPOT budget): plain Solidity calls, no ink! step, no anchors.
 //
 // Steps (each records its result in deployments/testnet.partial.json and is skipped once done):
 //   fund       sr25519 account -> tPOT to the deployer, provider and buyer EVM keys (their twin accounts)
@@ -31,7 +33,7 @@ import { makeProvider, sendTx, settlementIface, settlement as settlementContract
 import { InkRegistry } from '../src/registry.mjs';
 import { RawInkRegistry } from '../src/inkraw.mjs';
 import { buildReviveCall, sendBatchFromEvmKey, sendCallFromEvmKey, twinSs58 } from '../src/xvm.mjs';
-import { XvmSettler } from '../src/settle.mjs';
+import { XvmSettler, EvmSettler } from '../src/settle.mjs';
 import { createSeller } from '../src/seller.mjs';
 import { Store } from '../src/store.mjs';
 import { makeRoutes } from '../src/routes.mjs';
@@ -48,6 +50,7 @@ const opt = name => {
 };
 const KEYS = opt('--keys');
 const PLAN = args.includes('--plan');
+const NO_INK = args.includes('--no-ink');
 const ONLY = (opt('--only') || '').split(',').filter(Boolean);
 if (!KEYS) {
   console.error('usage: deploy-testnet.mjs --keys <env file> [--plan] [--only step,...]');
@@ -56,7 +59,10 @@ if (!KEYS) {
 
 const TPOT = 10n ** 14n; // native planck per tPOT
 // MeterSettlement deploy ~285 tPOT (code deposit); provider: 2 endpoints + anchors; buyer: approve + 2 payments + feedback.
-const FUND = { DEPLOYER: 330n * TPOT, PROVIDER: 120n * TPOT, BUYER: 50n * TPOT };
+// With --no-ink the amounts are tight: sendTx reserves gas limit x gas price up front, the rest stays on the twin.
+const FUND = NO_INK
+  ? { DEPLOYER: 300n * TPOT, PROVIDER: 45n * TPOT, BUYER: 45n * TPOT }
+  : { DEPLOYER: 330n * TPOT, PROVIDER: 120n * TPOT, BUYER: 50n * TPOT };
 // MeterRegistry instantiate dry-run on 2026-11-01: 1,270.29 tPOT storage deposit (16,090-byte wasm), plus fees.
 const INK_BUDGET = 1_320n * TPOT;
 const ASSET = { name: 'Portal Meter Test USD', symbol: 'tUSDm', decimals: 6, mintToBuyer: 1_000_000_000n };
@@ -130,7 +136,7 @@ try {
 
   // ---------------------------------------------------------------- budget check before anything is sent
   if (want('fund') && !args.includes('--force-partial')) {
-    let need = want('ink') ? INK_BUDGET : 0n;
+    let need = want('ink') && !NO_INK ? INK_BUDGET : 0n;
     for (const [r, w] of Object.entries(W)) {
       const have = await freeOf(twinSs58(w.address));
       if (have < FUND[r]) need += FUND[r] - have;
@@ -185,7 +191,8 @@ try {
     const art = JSON.parse(readFileSync(PATHS.evmArtifact, 'utf8'));
     const f = new ContractFactory(art.abi, art.bytecode.object, W.DEPLOYER);
     const tx = await f.getDeployTransaction();
-    const r = await sendTx(W.DEPLOYER, { data: tx.data });
+    // the storage deposit is priced as gas: keep the bumps small so the up-front reservation fits the balance
+    const r = await sendTx(W.DEPLOYER, { data: tx.data }, { gasPriceBumpPct: 2n, gasLimitBumpPct: 2n });
     state.settlement = getAddress(r.contractAddress);
     state.settlementTx = r.hash;
     state.settlementBlock = r.blockNumber;
@@ -197,7 +204,7 @@ try {
   // ---------------------------------------------------------------- ink
   const bundle = JSON.parse(readFileSync(INK_BUNDLE, 'utf8'));
   const abi = new Abi(bundle, api.registry.getChainProperties());
-  if (want('ink')) {
+  if (want('ink') && !NO_INK) {
     const ctor = abi.findConstructor('new');
     const data = ctor.toU8a([state.settlement, NETWORK.chainId]);
     const salt = u8aToHex(new TextEncoder().encode(`portal-meter-${Date.now()}`));
@@ -228,10 +235,23 @@ try {
     done('ink');
   }
 
-  const contract = new ContractPromise(api, abi, state.registry.address);
-  const ink = new InkRegistry({ api, contract, readOrigin: twinSs58(W.BUYER.address) });
+  const ink = state.registry
+    ? new InkRegistry({ api, contract: new ContractPromise(api, abi, state.registry.address), readOrigin: twinSs58(W.BUYER.address) })
+    : null;
 
   // ---------------------------------------------------------------- endpoints: one cross-VM transaction
+  if (want('endpoints') && !ink) {
+    // EVM half only: two plain Solidity transactions from the provider key
+    for (const [id, price, path] of [[1, PRICES.account, '/v1/account/{address}'], [2, PRICES.asset, '/v1/asset/{id}']]) {
+      const data = settlementIface.encodeFunctionData('registerEndpoint', [state.payee, state.token.precompile, price, REFUND_DELAY]);
+      const r = await sendTx(W.PROVIDER, { to: state.settlement, data });
+      state.endpoints = [...(state.endpoints || []), { id, path, price: String(price), uri: `http://127.0.0.1:${SELLER_PORT}${path}` }];
+      noteTx(`provider: register endpoint ${id} ${path}`, 'evm', r.hash, r.blockNumber);
+    }
+    const s = settlementContract(state.settlement, evm);
+    log(`  EVM endpointCount ${await s.endpointCount()}`);
+    done('endpoints');
+  }
   if (want('endpoints')) {
     const providerTwin = twinSs58(W.PROVIDER.address);
     const reg = (price) => settlementIface.encodeFunctionData('registerEndpoint', [state.payee, state.token.precompile, price, REFUND_DELAY]);
@@ -265,18 +285,20 @@ try {
       chain: { chainId: NETWORK.chainId, settlementAddress: state.settlement, settlement: settlementContract(state.settlement, evm) },
       provider: W.PROVIDER.address,
       signer: W.PROVIDER,
-      settler: new XvmSettler({ api, wallet: W.PROVIDER, settlementAddress: state.settlement, inkRegistry: ink }),
+      settler: ink
+        ? new XvmSettler({ api, wallet: W.PROVIDER, settlementAddress: state.settlement, inkRegistry: ink })
+        : new EvmSettler({ wallet: W.PROVIDER, settlementAddress: state.settlement }),
       store: new Store(join(PATHS.root, 'deployments', '.seller-state.json')),
-      registry: { kind: 'ink', address: state.registry.address },
+      registry: ink ? { kind: 'ink', address: state.registry.address } : { kind: 'none', address: null },
       routes,
       log: (...a) => log('  seller:', ...a),
     });
     await new Promise(r => server.listen(SELLER_PORT, '127.0.0.1', r));
     const opts = {
       wallet: W.BUYER, expect: { chainId: NETWORK.chainId, settlement: state.settlement, token: state.token.precompile },
-      maxPrice: 50_000n, registry: ink, approveAmount: 1_000_000n, log: m => log('  buyer:', m),
+      maxPrice: 50_000n, registry: ink || undefined, approveAmount: 1_000_000n, log: m => log('  buyer:', m),
     };
-    const raw = new RawInkRegistry({ rpc: NETWORK.substrateHttp, accountId: state.registry.accountId, origin: state.readOrigin, selectors: state.registry.selectors });
+    const raw = ink ? new RawInkRegistry({ rpc: NETWORK.substrateHttp, accountId: state.registry.accountId, origin: state.readOrigin, selectors: state.registry.selectors }) : undefined;
     const results = [];
     try {
       const cases = [
@@ -288,26 +310,31 @@ try {
         const r = await buy(c.url, opts);
         log(`  -> HTTP ${r.status}, outcome ${r.receipt?.outcome}, tx ${r.receipt?.tx}`);
         if (!r.receipt) throw new Error(`no receipt: ${r.body.toString().slice(0, 300)}`);
-        const v = await verifyReceipt(r.receipt, { evm, expect: { chainId: NETWORK.chainId, settlement: state.settlement }, body: r.receipt.outcome === 'served' ? r.body : undefined, registry: ink, fromBlock: state.fromBlock });
+        const v = await verifyReceipt(r.receipt, { evm, expect: { chainId: NETWORK.chainId, settlement: state.settlement }, body: r.receipt.outcome === 'served' ? r.body : undefined, registry: ink || undefined, fromBlock: state.fromBlock });
         const v2 = await verifyReceipt(r.receipt, { evm, expect: { chainId: NETWORK.chainId, settlement: state.settlement }, body: r.receipt.outcome === 'served' ? r.body : undefined, registry: raw, fromBlock: state.fromBlock });
         console.log(formatReport(v));
         if (v.verdict !== 'ACCEPT' || v2.verdict !== 'ACCEPT') throw new Error(`verifier did not accept the ${c.name} receipt`);
-        results.push({ name: c.name, request: new URL(c.url).pathname, status: r.status, payTx: r.payTx, approveTx: r.approveTx, receipt: r.receipt, body: r.body.toString('utf8'), verification: v });
+        const rec = { name: c.name, request: new URL(c.url).pathname, status: r.status, payTx: r.payTx, approveTx: r.approveTx, receipt: r.receipt, body: r.body.toString('utf8'), verification: v };
+        results.push(rec);
+        mkdirSync(join(DEPLOY_DIR, 'receipts'), { recursive: true });
+        writeFileSync(join(DEPLOY_DIR, 'receipts', `${c.name}.json`), JSON.stringify(rec, null, 2) + '\n');
         if (r.approveTx) noteTx('buyer: approve the settlement contract on the tUSDm precompile', 'evm', r.approveTx, null);
         noteTx(`buyer: pay request (${c.name} case)`, 'evm', r.payTx, null);
-        noteTx(`provider: ${c.name === 'served' ? 'settle' : 'refund'} in Solidity + anchor in ink!, one Ethereum tx`, 'evm -> substrate', r.receipt.tx, r.receipt.block);
+        const verb = c.name === 'served' ? 'settle the served request' : 'refund the undeliverable request';
+        if (ink) noteTx(`provider: ${verb} in Solidity + anchor in ink!, one Ethereum tx`, 'evm -> substrate', r.receipt.tx, r.receipt.block);
+        else noteTx(`provider: ${verb} (Solidity)`, 'evm', r.receipt.tx, r.receipt.block);
       }
       // buyer confirms the served request in the ink! registry, from its EVM key
-      const served = results.find(x => x.name === 'served');
-      const { call } = await ink.buildCall(twinSs58(W.BUYER.address), 'rate', W.PROVIDER.address, 1, served.receipt.nonce, true);
-      const rr = await sendCallFromEvmKey(W.BUYER, call);
-      noteTx('buyer: confirm the served request in ink! (contracts.call from its EVM key)', 'evm -> substrate', rr.hash, rr.blockNumber);
-      log(`  reputation now: ${JSON.stringify(await ink.reputation(W.PROVIDER.address, 1))}`);
+      if (ink) {
+        const served = results.find(x => x.name === 'served');
+        const { call } = await ink.buildCall(twinSs58(W.BUYER.address), 'rate', W.PROVIDER.address, 1, served.receipt.nonce, true);
+        const rr = await sendCallFromEvmKey(W.BUYER, call);
+        noteTx('buyer: confirm the served request in ink! (contracts.call from its EVM key)', 'evm -> substrate', rr.hash, rr.blockNumber);
+        log(`  reputation now: ${JSON.stringify(await ink.reputation(W.PROVIDER.address, 1))}`);
+      }
     } finally {
       server.close();
     }
-    mkdirSync(join(DEPLOY_DIR, 'receipts'), { recursive: true });
-    for (const r of results) writeFileSync(join(DEPLOY_DIR, 'receipts', `${r.name}.json`), JSON.stringify(r, null, 2) + '\n');
     state.sampleReceipt = 'deployments/receipts/served.json';
     done('demo');
   }

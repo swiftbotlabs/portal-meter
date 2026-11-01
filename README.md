@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml)
 
-**Pay-per-request API settlement for Portaldot V3, built on both of its contract VMs.**
+**Pay-per-request API settlement for Portaldot V3, built for both of its contract VMs.**
 
 An API provider lists an endpoint with a price. A client pays for **one request** in a Portaldot native asset,
 reached from Solidity through the runtime's ERC-20 precompile. The payment waits in escrow in a Solidity contract on
@@ -16,9 +16,10 @@ By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & M
 PortaldotV3 testnet from your browser (network, the native-asset ERC-20 precompile, contracts, endpoints, provider
 record, payments) and includes a free receipt verifier.
 
-> **Status (2026-11-01):** contracts, seller, buyer, verifier, live page and tests are complete. The testnet
-> deployment runs with one command (`scripts/deploy-testnet.mjs`) and is waiting for testnet tPOT; addresses and
-> transactions will be listed under [Testnet deployment](#testnet-deployment).
+> **Status (2026-11-01):** the Solidity settlement is **live on the PortaldotV3 testnet**: a real paid request and a
+> real refund went through, and both receipts verify. The ink! registry and the one-transaction cross-VM settlement
+> are built and tested; the registry is not on the testnet yet because its storage deposit exceeds the testnet funds
+> we hold so far (see [Testnet deployment](#testnet-deployment)).
 
 ## How a request is paid
 
@@ -58,9 +59,31 @@ bridge or oracle is involved.
 PortaldotV3 testnet: EVM chain id `420420777`, `https://test-evm-rpc-v3.portaldot.dev`,
 `wss://test-node-v3.portaldot.dev`, explorer [scanner-testnet-v3.portaldot.dev](https://scanner-testnet-v3.portaldot.dev).
 
-_Pending: the deployment script is ready and runs once the deployer account holds testnet tPOT. This section will
-list the contract addresses, the asset, and every transaction (deploy, endpoint registration, one served request,
-one refund, buyer feedback), as `deployments/testnet.json` will._
+| | Address | Deployed in |
+|---|---|---|
+| `MeterSettlement` (Solidity, pallet-revive) | `0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e` | tx `0x1adf1c42…31227`, [block 276611](https://scanner-testnet-v3.portaldot.dev/blocks/276611) |
+| Payment token: native asset [#43907 tUSDm](https://scanner-testnet-v3.portaldot.dev/assets/43907) (test token) | ERC-20 precompile `0x0000ab8300000000000000000000000000010000` | [block 276610](https://scanner-testnet-v3.portaldot.dev/blocks/276610) |
+| `MeterRegistry` (ink!, pallet-contracts) | not deployed yet | `ContractsApi_instantiate` dry-run accepts the code; storage deposit 1,270 tPOT |
+
+| Step | Transaction | Block | Cost |
+|---|---|---|---|
+| Provider registers endpoint 1 (account view, 0.025 tUSDm) | `0x44a7d0b4864bb4ea76649a1715401d3afde88ee56acffd64fb7600168bfdf39e` | [276612](https://scanner-testnet-v3.portaldot.dev/blocks/276612) | 15.39 tPOT |
+| Provider registers endpoint 2 (asset view, 0.010 tUSDm) | `0xf4f367da4236935df37377c20356141798f4c34c7c8baf8c15ccd80cd6d45ba6` | [276613](https://scanner-testnet-v3.portaldot.dev/blocks/276613) | 11.55 tPOT |
+| Buyer approves the settlement contract on the precompile | `0xca1867b45d46335dfe2c4b47254b4be6aff6cc01f3563897f99da7c55a68962b` | [276615](https://scanner-testnet-v3.portaldot.dev/blocks/276615) | 0.02 tPOT |
+| **Paid request:** buyer pays 0.025 tUSDm | `0x38aaaf8a83481db8f420d8a5ff2e88e70b35e7c9f5cd81a3c0d30c42903005a9` | [276616](https://scanner-testnet-v3.portaldot.dev/blocks/276616) | 7.70 tPOT |
+| **Served:** HTTP 200, provider settles to the payee | `0xa013c5400ea7c4e26bc90dd20a046a063921e7af2afb3a86f36cad0d30124713` | [276617](https://scanner-testnet-v3.portaldot.dev/blocks/276617) | 0 (freed deposit covers it) |
+| **Undeliverable request:** buyer pays 0.010 tUSDm for an asset that does not exist | `0xcacb9a74ee80cfc806722fb4b859422719f630d9bc5a1debf2abf4a42c16dab0` | [276618](https://scanner-testnet-v3.portaldot.dev/blocks/276618) | 7.70 tPOT |
+| **Refunded:** HTTP 404, provider refunds on-chain (reason 3) | `0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf` | [276619](https://scanner-testnet-v3.portaldot.dev/blocks/276619) | 0 |
+
+Everything is in [`deployments/testnet.json`](deployments/testnet.json). The signed receipts and the verifier's reports
+are in [`deployments/receipts/`](deployments/receipts), and receipts and events are archived in
+[`deployments/proof/`](deployments/proof) because the public RPC prunes old transaction receipts. Check a receipt yourself:
+
+```bash
+node bin/portal-meter.mjs verify deployments/receipts/served.json     # ACCEPT, no key needed
+```
+
+The explorer indexes the Substrate side, so open the block (linked above) rather than searching for a `0x` hash.
 
 ## Run it
 

@@ -108,7 +108,7 @@ export async function accountView(up, input) {
     },
     evm: { address: p.h160, ...evmSide, isContract: evmSide.codeBytes > 0 },
     mapping: {
-      rule: p.kind === 'evm' ? 'H160 ++ 0xEE*12' : 'keccak256(accountId)[12..]',
+      rule: isEthDerived(decodeAddress(encodeAddress(p.accountId, 42))) ? 'H160 ++ 0xEE*12' : 'keccak256(accountId)[12..]',
       mappedAccount: original,
     },
     nativeAssets: assets,

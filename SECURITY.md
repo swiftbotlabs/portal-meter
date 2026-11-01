@@ -9,7 +9,7 @@ what each part defends against and what it does not. Report problems through a G
 |---|---|
 | Someone claims another buyer's payment | `requestId` is derived on-chain from `msg.sender`; the seller also requires a payer signature over the request id and the request hash |
 | Paying twice for one request id / replay after refund | a request id can be paid once, ever: the status slot is kept when the amount slot is cleared |
-| Provider takes the money and never serves | the payer can `refund` after the endpoint's `refundDelay` (60 s to 7 days) |
+| Provider goes silent after being paid | the payer can `refund` after the endpoint's `refundDelay` (60 s to 7 days) |
 | Price raised between quote and payment | `pay(…, maxPrice)` reverts above the buyer's cap |
 | Endpoint registered with an address that is not a token | `registerEndpoint` requires a one-word `totalSupply()` answer; low-level transfers also check the return data (`true` or nothing) |
 | Re-entrancy through a hostile token | state is final before every transfer, plus a re-entrancy guard (tested with a token that re-enters `refund`) |
@@ -17,7 +17,10 @@ what each part defends against and what it does not. Report problems through a G
 | Fake feedback | `rate` recomputes the request id from the caller's address, so only the payer can rate, once, and only a served request |
 | Squatting anchors to block a provider | anchors are keyed by (provider, request id); others write only in their own namespace |
 
-Not covered: the registry records what providers declare; a provider that pays itself can inflate its own
+Not covered: `settle` is the provider's call. A dishonest provider can settle without delivering; the contract
+cannot see the HTTP response. What the buyer has then is a public record: the absent or wrong body against the
+hash in the `Served` event, and a dispute in the ink! registry. Buyers should cap what they pay a provider without
+history. The registry also records what providers declare; a provider that pays itself can inflate its own
 "served" count. The verifier detects anchors that have no matching `Served`/`Refunded` event, and `rate` gives
 real payers a voice, but sybil-resistant reputation is out of scope.
 

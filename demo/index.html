@@ -31,8 +31,8 @@
       <p>An API provider lists an endpoint with a price. A client pays for <b>one request</b> in an ERC-20 (here a
         Portaldot <b>native asset</b>, reached through the pallet-assets ERC-20 precompile). The payment waits in
         escrow in a Solidity contract on Portaldot's EVM. The provider settles it once it has served the request,
-        or refunds it. The outcome is anchored in an <b>ink!</b> registry on Portaldot's WASM VM in the same
-        transaction. Everything on this page is read live from the testnet by your browser.</p>
+        or refunds it. An <b>ink!</b> registry on Portaldot's WASM VM keeps the provider's public record.
+        Everything on this page is read live from the testnet by your browser.</p>
       <div class="flow" aria-label="request flow">
         <div class="step"><b>1</b> GET → <code>402</code> quote</div>
         <div class="step"><b>2</b> <code>pay()</code> on EVM</div>

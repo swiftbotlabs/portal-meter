@@ -107,21 +107,28 @@ async function refreshAsset(token) {
 // ------------------------------------------------------------------ contracts, endpoints, activity
 async function refreshContracts(d, md) {
   const s = settlementContract(d.settlement, evm);
-  const reg = new RawInkRegistry({ rpc: NET.subRpc, accountId: d.registry.accountId, origin: d.readOrigin, selectors: d.registry.selectors });
-  const [count, info] = await Promise.all([s.endpointCount(), reg.info().catch(e => ({ error: e.message }))]);
+  const reg = d.registry
+    ? new RawInkRegistry({ rpc: NET.subRpc, accountId: d.registry.accountId, origin: d.readOrigin, selectors: d.registry.selectors })
+    : null;
+  const [count, info] = await Promise.all([s.endpointCount(), reg ? reg.info().catch(e => ({ error: e.message })) : null]);
   kv($('contracts-kv'), [
     ['MeterSettlement (EVM)', `<span class="mono">${esc(d.settlement)}</span>`],
     ['deployed in', `${link(`${NET.explorer}/blocks/${d.settlementBlock}`, `block ${d.settlementBlock}`)}`],
-    ['MeterRegistry (ink!)', link(`${NET.explorer}/accounts/${d.registry.address}`, short(d.registry.address, 8))],
-    ['registry knows', info.error ? esc(info.error) : `settlement ${short(info.settlement)} · ${info.endpoints} endpoints · ${info.anchors} outcomes anchored`],
+    ...(reg ? [
+      ['MeterRegistry (ink!)', link(`${NET.explorer}/accounts/${d.registry.address}`, short(d.registry.address, 8))],
+      ['registry knows', info.error ? esc(info.error) : `settlement ${short(info.settlement)} · ${info.endpoints} endpoints · ${info.anchors} outcomes anchored`],
+    ] : [['MeterRegistry (ink!)', 'built and tested, not on the testnet yet']]),
     ['endpoints listed', String(count)],
   ]);
   const rows = [];
   // anyone can list an endpoint in MeterSettlement: show the first 20 only
   for (let i = 1; i <= Math.min(Number(count), 20); i++) {
     const ep = await readEndpoint(s, i);
-    const [rec, rep] = await Promise.all([reg.endpoint(ep.provider, i).catch(() => null), reg.reputation(ep.provider, i).catch(() => null)]);
-    rows.push(`<tr><td>${i}</td><td class="mono">${esc(rec ? rec.uri : '(not in registry)')}</td><td>${formatUnits(ep.price, md.decimals)} ${esc(md.symbol)}</td>
+    const [rec, rep] = reg
+      ? await Promise.all([reg.endpoint(ep.provider, i).catch(() => null), reg.reputation(ep.provider, i).catch(() => null)])
+      : [null, null];
+    const known = (d.endpoints || []).find(x => x.id === i);
+    rows.push(`<tr><td>${i}</td><td class="mono">${esc(rec ? rec.uri : known ? known.path : '(third-party endpoint)')}</td><td>${formatUnits(ep.price, md.decimals)} ${esc(md.symbol)}</td>
       <td class="mono">${esc(short(ep.provider))}</td><td>${rep ? rep.served : '-'}</td><td>${rep ? rep.refunded : '-'}</td>
       <td>${rep ? rep.confirmed : '-'}</td><td>${rep ? rep.disputed : '-'}</td><td>${rep ? (rep.scoreBps / 100).toFixed(1) + ' %' : '-'}</td></tr>`);
   }
@@ -220,6 +227,12 @@ async function main() {
     return;
   }
   d.settlement = getAddress(d.settlement);
+  if (!d.registry) {
+    $('pending').hidden = false;
+    $('pending').innerHTML = `<h2>The EVM half is live on the testnet</h2><p>Settlement, the native-asset payment, a served request
+      and a refund below are real testnet transactions. The ink! registry is built and tested but not deployed yet: its storage
+      deposit is larger than the current testnet funds. Until then the provider columns and the anchor check stay empty.</p>`;
+  }
   renderTxs(d);
   let reg = null;
   try {
