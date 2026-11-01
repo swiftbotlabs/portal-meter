@@ -71,8 +71,8 @@ slide('', `
   <img class="diagram" src="architecture.svg" alt="architecture">`);
 
 slide('proof', `
-  <h2>Proof so far</h2>
-  <div class="cols">
+  <h2>Tested, and checked on the live chain</h2>
+  <div class="cols even">
     <div>
       <div class="stats">
         <div><b>${counts.foundry}</b><span>Solidity tests<br>unit · fuzz · invariant</span></div>
@@ -98,6 +98,22 @@ slide('proof', `
        endpoint registration tx (Solidity + ink! in one Ethereum tx) · one served request (pay, settle + anchor) ·
        one refunded request (pay, refund + anchor) · buyer feedback tx</div>
        <p class="note">The deployment runs with one command (scripts/deploy-testnet.mjs) once the deployer account holds testnet tPOT.</p>`}`);
+
+slide('', `
+  <h2>One transaction, both VMs</h2>
+  <div class="cols even">
+    <div>
+      <p class="lead2">The provider's Ethereum key signs <b>one</b> transaction to the runtime pallets address:</p>
+      <p><code>utility.batchAll([revive.call(settle), contracts.call(record)])</code></p>
+      <ul class="small">
+        <li>The buyer's escrow moves to the payee (<code>assets.Transferred</code>, <code>revive.ContractEmitted</code>)</li>
+        <li>The ink! registry anchors the outcome (<code>contracts.ContractEmitted</code>, <code>contracts.Called</code>)</li>
+        <li>All or nothing: <code>utility.BatchCompleted</code></li>
+        <li>Block 276,658 on the testnet explorer, events tab</li>
+      </ul>
+    </div>
+    <img class="shot" src="block-events.png" alt="events of block 276658">
+  </div>`);
 
 slide('', `
   <h2>Who pays, and how it grows</h2>
@@ -136,6 +152,7 @@ h3 { margin: 0 0 6px; font-size: 22px; color: #e6007a; }
 ul.big li, ol.flow li { margin: 0 0 12px; }
 ol.flow { font-size: 22px; padding-left: 1.2em; }
 .cols { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0.4in; align-items: start; }
+.cols.even { grid-template-columns: 1fr 1fr; }
 .callout { background: #fdf0f7; border-left: 6px solid #e6007a; padding: 18px 20px; border-radius: 8px; font-size: 20px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25in; }
 .card { border: 1px solid #e2e6ef; border-radius: 12px; padding: 16px 18px; font-size: 18px; }
@@ -143,6 +160,7 @@ ol.flow { font-size: 22px; padding-left: 1.2em; }
 code, .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
 code { background: #eef1f7; padding: 1px 5px; border-radius: 4px; }
 .shot { width: 100%; border: 1px solid #e2e6ef; border-radius: 10px; }
+.lead2 { font-size: 22px; margin-top: 0; }
 .small { font-size: 17px; margin-top: 0.2in; }
 .small li { margin-bottom: 6px; }
 .placeholder { border: 3px dashed #e6007a; border-radius: 14px; padding: 0.35in; font-size: 22px; color: #2b3350; background: #fdf0f7; }

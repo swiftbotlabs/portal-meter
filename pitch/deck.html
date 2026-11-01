@@ -15,6 +15,7 @@ h3 { margin: 0 0 6px; font-size: 22px; color: #e6007a; }
 ul.big li, ol.flow li { margin: 0 0 12px; }
 ol.flow { font-size: 22px; padding-left: 1.2em; }
 .cols { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0.4in; align-items: start; }
+.cols.even { grid-template-columns: 1fr 1fr; }
 .callout { background: #fdf0f7; border-left: 6px solid #e6007a; padding: 18px 20px; border-radius: 8px; font-size: 20px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25in; }
 .card { border: 1px solid #e2e6ef; border-radius: 12px; padding: 16px 18px; font-size: 18px; }
@@ -22,6 +23,7 @@ ol.flow { font-size: 22px; padding-left: 1.2em; }
 code, .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
 code { background: #eef1f7; padding: 1px 5px; border-radius: 4px; }
 .shot { width: 100%; border: 1px solid #e2e6ef; border-radius: 10px; }
+.lead2 { font-size: 22px; margin-top: 0; }
 .small { font-size: 17px; margin-top: 0.2in; }
 .small li { margin-bottom: 6px; }
 .placeholder { border: 3px dashed #e6007a; border-radius: 14px; padding: 0.35in; font-size: 22px; color: #2b3350; background: #fdf0f7; }
@@ -73,8 +75,8 @@ footer { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.25in; displa
   <h2>Architecture</h2>
   <img class="diagram" src="architecture.svg" alt="architecture"><footer><span>Portal Meter · Swift Bot Labs</span><span>5</span></footer></section>
 <section class="slide proof">
-  <h2>Proof so far</h2>
-  <div class="cols">
+  <h2>Tested, and checked on the live chain</h2>
+  <div class="cols even">
     <div>
       <div class="stats">
         <div><b>20</b><span>Solidity tests<br>unit · fuzz · invariant</span></div>
@@ -83,7 +85,7 @@ footer { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.25in; displa
       </div>
       <ul class="small">
         <li>CI on every push: Foundry, ink! release build (cargo-contract 5.0.3), Node end to end</li>
-        <li>Measured on the live testnet: the ink! code is accepted by an instantiate dry-run; Ethereum transactions to the runtime pallets address dispatch <code>batchAll(revive.call, contracts.call)</code></li>
+        <li>14 negative checks on the live contracts: replays, strangers and tampered receipts are refused</li>
         <li>Live page reads both VMs from the browser and verifies receipts</li>
         <li>Open source, MIT: github.com/swiftbotlab/portal-meter</li>
       </ul>
@@ -91,12 +93,24 @@ footer { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.25in; displa
     <img class="shot" src="demo-page.png" alt="live page">
   </div><footer><span>Portal Meter · Swift Bot Labs</span><span>6</span></footer></section>
 <section class="slide proof">
-  <h2>Testnet deployment</h2>
-  <div class="placeholder"><b>PLACEHOLDER: filled after the testnet deployment</b><br>
-       MeterSettlement address and deploy tx · MeterRegistry (ink!) address · native asset id ·
-       endpoint registration tx (Solidity + ink! in one Ethereum tx) · one served request (pay, settle + anchor) ·
-       one refunded request (pay, refund + anchor) · buyer feedback tx</div>
-       <p class="note">The deployment runs with one command (scripts/deploy-testnet.mjs) once the deployer account holds testnet tPOT.</p><footer><span>Portal Meter · Swift Bot Labs</span><span>7</span></footer></section>
+  <h2>Live on the PortaldotV3 testnet</h2>
+  <table><tr><td>MeterSettlement (Solidity, EVM)</td><td class="mono">0x9E7Ad2Aa75…ef97e5781e</td><td>deploy 0x1adf1c42…15731227 · block 276611</td></tr><tr><td>MeterRegistry (ink!, WASM)</td><td class="mono">5DHgN8JZRpyo…K1K2Vd8Ku4</td><td>instantiate 0xef17ab33…97bd60e0 · block 276655</td></tr><tr><td>Native asset #43907 tUSDm</td><td class="mono">0x0000ab8300…0000010000</td><td>ERC-20 precompile address</td></tr><tr><td>Endpoints listed in ink! from the provider's Ethereum key</td><td class="mono">0x7c14d9debd…12f6cc569b</td><td>block 276656</td></tr><tr><td>Paid request: buyer pays into escrow</td><td class="mono">0x75b80a21c8…dae28a7e8e</td><td>block 276657</td></tr><tr><td>Served: settle + ink! anchor, one Ethereum tx</td><td class="mono">0xf5264278d3…1e7e0bacb6</td><td>block 276658</td></tr><tr><td>Refunded: refund + ink! anchor, one Ethereum tx</td><td class="mono">0x1a52029d1a…d68a36f314</td><td>block 276660</td></tr><tr><td>Buyer confirms in ink! from its Ethereum key</td><td class="mono">0x91d0a18a7a…7970cd3297</td><td>block 276665</td></tr></table>
+  <p class="note">All transactions with blocks: deployments/testnet.json · live page: swiftbotlab.github.io/portal-meter/demo · explorer https://scanner-testnet-v3.portaldot.dev</p><footer><span>Portal Meter · Swift Bot Labs</span><span>7</span></footer></section>
+<section class="slide ">
+  <h2>One transaction, both VMs</h2>
+  <div class="cols even">
+    <div>
+      <p class="lead2">The provider's Ethereum key signs <b>one</b> transaction to the runtime pallets address:</p>
+      <p><code>utility.batchAll([revive.call(settle), contracts.call(record)])</code></p>
+      <ul class="small">
+        <li>The buyer's escrow moves to the payee (<code>assets.Transferred</code>, <code>revive.ContractEmitted</code>)</li>
+        <li>The ink! registry anchors the outcome (<code>contracts.ContractEmitted</code>, <code>contracts.Called</code>)</li>
+        <li>All or nothing: <code>utility.BatchCompleted</code></li>
+        <li>Block 276,658 on the testnet explorer, events tab</li>
+      </ul>
+    </div>
+    <img class="shot" src="block-events.png" alt="events of block 276658">
+  </div><footer><span>Portal Meter · Swift Bot Labs</span><span>8</span></footer></section>
 <section class="slide ">
   <h2>Who pays, and how it grows</h2>
   <div class="cols">
@@ -106,7 +120,7 @@ footer { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.25in; displa
       <li><b>Revenue (planned):</b> a small protocol fee on settlement (basis points, per deployment; not in the testnet contract yet) and a hosted seller for providers who do not want to run one.</li>
       <li><b>Growth:</b> drop-in middleware for Express/Fastify, listing in the Portaldot ecosystem directory, wallet support for 402 quotes.</li>
     </ul>
-  </div><footer><span>Portal Meter · Swift Bot Labs</span><span>8</span></footer></section>
+  </div><footer><span>Portal Meter · Swift Bot Labs</span><span>9</span></footer></section>
 <section class="slide ">
   <h2>Roadmap, and why keep supporting it</h2>
   <div class="grid2">
@@ -114,4 +128,4 @@ footer { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.25in; displa
     <div class="card"><h3>Next quarter</h3><p>prepaid credit channels for high-frequency callers · explorer / wallet integration of receipts · more paid Portaldot data endpoints</p></div>
     <div class="card"><h3>What Portaldot gets</h3><p>open-source middleware every API builder can reuse · real fee-paying transactions on both VMs · a reference for cross-VM design (documented, tested, measured)</p></div>
     <div class="card"><h3>Team</h3><p>Swift Bot Labs, a small studio building payment and API infrastructure. Builds on our MIT-licensed HSK Meter (Oct 2026); this repository was written for Portaldot during the Hacker House.</p></div>
-  </div><footer><span>Portal Meter · Swift Bot Labs</span><span>9</span></footer></section></body></html>
+  </div><footer><span>Portal Meter · Swift Bot Labs</span><span>10</span></footer></section></body></html>
