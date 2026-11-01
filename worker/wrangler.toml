@@ -10,6 +10,12 @@ workers_dev = true
 [observability]
 enabled = true
 
+# Page, deck, docs and source archive: node scripts/build-site.mjs writes worker/public
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/v1/*", "/health", "/admin/*", "/internal/*", "/.well-known/*"]
+
 [[durable_objects.bindings]]
 name = "LEDGER"
 class_name = "Ledger"
