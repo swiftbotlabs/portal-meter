@@ -1,0 +1,57 @@
+// The hand-written SCALE encoder against a vector produced by polkadot.js from the live PortaldotV3 metadata (spec 3002).
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { CALLS_SPEC_3002 as C, batchAll, compact, contractsCall, inkRecordData, reviveCall } from '../src/runtime-calls.mjs';
+import { pendingSessions, settleInput, shouldSettle } from '../src/session-settle.mjs';
+
+const VECTOR = '0x01020850019e7ad2aa754a0eba70cfbd1db01d25ef97e5781e000700bca0650102350c000b00407a10f35af101deadbeef1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111506003621669d774ff38e377992f276b1e320fd9836aad3581f688e4c7b8a1abf35d7000700bca0650102350c00006501ad11afc403000000abababababababababababababababababababababababababababababababab01d20a1feb8ca954ab0000000000000000cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd';
+
+const hex = u8 => Buffer.from(u8).toString('hex');
+
+test('compact matches the SCALE spec', () => {
+  assert.equal(hex(compact(0)), '00');
+  assert.equal(hex(compact(1)), '04');
+  assert.equal(hex(compact(63)), 'fc');
+  assert.equal(hex(compact(64)), '0101');
+  assert.equal(hex(compact(16383)), 'fdff');
+  assert.equal(hex(compact(16384)), '02000100');
+  assert.equal(hex(compact(1073741823)), 'feffffff');
+  assert.equal(hex(compact(1073741824)), '0300000040');
+  assert.equal(hex(compact(10n ** 14n)), '0b00407a10f35a');
+  assert.throws(() => compact(-1));
+});
+
+test('batchAll(revive.call, contracts.call) is byte-identical to polkadot.js', () => {
+  const w = { refTime: 6000000000n, proofSize: 200000n };
+  const dest = '0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e';
+  const data = '0xdeadbeef' + '11'.repeat(120);
+  const acct = '0x3621669d774ff38e377992f276b1e320fd9836aad3581f688e4c7b8a1abf35d7';
+  const ink = inkRecordData({ endpointId: 3, requestId: '0x' + 'ab'.repeat(32), amount: 12345678901234567890n, receiptHash: '0x' + 'cd'.repeat(32) });
+  const mine = batchAll(C, [reviveCall(C, { dest, weight: w, depositLimit: 10n ** 14n, data }), contractsCall(C, { dest: acct, weight: w, data: ink })]);
+  assert.equal(mine, VECTOR);
+});
+
+const state = (o = {}) => ({
+  session: '0x' + '11'.repeat(32), count: 5, redeemedCount: 0, redeemedCum: '0', updatedAt: 1000,
+  lastVoucher: { session: '0x' + '11'.repeat(32), cumulative: '50000', count: 5, head: '0x' + '22'.repeat(32), signature: '0x' + '33'.repeat(65) }, ...o,
+});
+
+test('pendingSessions skips sessions with nothing new', () => {
+  assert.equal(pendingSessions([state(), state({ redeemedCount: 5 }), state({ lastVoucher: null })]).length, 1);
+});
+
+test('shouldSettle: enough requests, or waited long enough, never twice in the gap', () => {
+  const now = 100_000;
+  assert.equal(shouldSettle([], { now }), false);
+  assert.equal(shouldSettle([state({ updatedAt: now })], { now }), false); // 5 waiting, fresh
+  assert.equal(shouldSettle([state({ updatedAt: now - 7 * 3600 })], { now }), true); // old
+  assert.equal(shouldSettle([state({ count: 30, updatedAt: now })], { now }), true); // many
+  assert.equal(shouldSettle([state({ count: 30, updatedAt: now })], { now, lastSettledAt: now - 60 }), false); // just settled
+});
+
+test('settleInput pairs one redeem and one anchor per session', () => {
+  const data = settleInput([state(), state()], { calls: C, sessionContract: '0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e', registryAccountId: '0x' + '36'.repeat(32), endpointId: 3 });
+  assert.ok(data.startsWith('0x010210')); // utility.batchAll, compact(4) calls
+  const without = settleInput([state()], { calls: C, sessionContract: '0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e', registryAccountId: null, endpointId: 3 });
+  assert.ok(without.startsWith('0x010204'));
+});
