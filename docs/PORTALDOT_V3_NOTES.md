@@ -32,7 +32,9 @@ ethers and polkadot.js are fine.
 
 **Cost in practice:** storage deposits dominate. `eth_estimateGas` for deploying our 3,454-byte
 `MeterSettlement` initcode returned `0x27f191fa3c028c` gas at a gas price of `0x6324`, i.e. about **285 tPOT**, almost
-all of it the code deposit. A storage slot that goes from zero to non-zero costs a deposit; setting it back to zero
+all of it the code deposit. On the WASM side, a `ContractsApi_instantiate` dry-run of our 16,090-byte ink!
+`MeterRegistry` asks for a **1,270.29 tPOT** storage deposit (code, its 30 % hash lockup and the contract's own
+storage). A storage slot that goes from zero to non-zero costs a deposit; setting it back to zero
 returns it. That is why `MeterSettlement` clears the amount slot of every finished payment.
 
 ## Address mapping between the VMs

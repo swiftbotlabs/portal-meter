@@ -55,7 +55,10 @@ if (!KEYS) {
 }
 
 const TPOT = 10n ** 14n; // native planck per tPOT
-const FUND = { DEPLOYER: 450n * TPOT, PROVIDER: 160n * TPOT, BUYER: 60n * TPOT };
+// MeterSettlement deploy ~285 tPOT (code deposit); provider: 2 endpoints + anchors; buyer: approve + 2 payments + feedback.
+const FUND = { DEPLOYER: 330n * TPOT, PROVIDER: 120n * TPOT, BUYER: 50n * TPOT };
+// MeterRegistry instantiate dry-run on 2026-11-01: 1,270.29 tPOT storage deposit (16,090-byte wasm), plus fees.
+const INK_BUDGET = 1_320n * TPOT;
 const ASSET = { name: 'Portal Meter Test USD', symbol: 'tUSDm', decimals: 6, mintToBuyer: 1_000_000_000n };
 const PRICES = { account: 25_000n, asset: 10_000n }; // 0.025 and 0.010 tUSDm
 const REFUND_DELAY = 600;
@@ -123,6 +126,20 @@ try {
     } else log('ink! bundle missing: download it from CI first (contracts/ink/meter_registry/artifact/)');
     log(`planned funding: ${Object.entries(FUND).map(([r, v]) => `${r.toLowerCase()} ${fmt(v)}`).join(', ')}`);
     process.exit(0);
+  }
+
+  // ---------------------------------------------------------------- budget check before anything is sent
+  if (want('fund') && !args.includes('--force-partial')) {
+    let need = want('ink') ? INK_BUDGET : 0n;
+    for (const [r, w] of Object.entries(W)) {
+      const have = await freeOf(twinSs58(w.address));
+      if (have < FUND[r]) need += FUND[r] - have;
+    }
+    need += 5n * TPOT; // fees
+    if (subFree < need) {
+      log(`not enough tPOT on ${sub.address}: have ${fmt(subFree)}, need ${fmt(need)} (use --force-partial to deploy step by step)`);
+      process.exit(3);
+    }
   }
 
   // ---------------------------------------------------------------- fund
