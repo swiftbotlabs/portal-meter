@@ -144,3 +144,17 @@ contract ReenterOnTransfer is MockERC20 {
         return super.transfer(to, v);
     }
 }
+
+/// Delivers 1 % less than it was told to move.
+contract FeeToken is MockERC20 {
+    constructor() MockERC20("Fee", "FEE", 6) {}
+
+    function transferFrom(address f, address to, uint256 v) public override returns (bool) {
+        uint256 a = allowance[f][msg.sender];
+        require(a >= v, "allowance");
+        allowance[f][msg.sender] = a - v;
+        _move(f, to, v - v / 100);
+        _move(f, address(1), v / 100);
+        return true;
+    }
+}

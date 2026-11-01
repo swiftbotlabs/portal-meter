@@ -67,6 +67,12 @@ flowchart LR
   only the account that paid on the EVM side can rate it, without any bridge, oracle or cross-VM read.
 - `reputation(provider, endpoint)`: served, refunded, confirmed, disputed and a score in basis points.
 
+### `MeterSession` (Solidity, pallet-revive)
+
+Prepaid budgets for high-frequency APIs, on top of the same endpoints. `open` locks a budget and names the session key,
+`redeem` pays out a voucher signed by that key, `close` returns what is unspent. It reads provider, payee and token from
+`MeterSettlement`, so an endpoint is sold both ways. Protocol, guarantees and limits: [SESSIONS.md](SESSIONS.md).
+
 ## Cross-VM path
 
 A Solidity contract on pallet-revive cannot call a pallet or an ink! contract (we checked: a call from a contract
@@ -94,6 +100,13 @@ returns the `Served` and `Refunded` events of these runtime-dispatched calls und
 the verifier treats them like any other settlement.
 
 The fallback when the cross-VM path is not wanted is `EvmSettler`: plain Solidity calls, no anchor.
+
+## Hosted seller
+
+`worker/` is a Cloudflare Worker with one Durable Object: the same metering core (`src/meter.mjs`), a ledger in Durable Object
+storage and a cron trigger. It has no server and no database of its own. `src/runtime-calls.mjs` encodes
+`utility.batchAll([revive.call, contracts.call, ...])` without polkadot.js, byte-identical to it on spec 3002, so a small runtime
+can settle across both VMs.
 
 ## Off-chain
 

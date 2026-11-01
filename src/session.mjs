@@ -13,6 +13,7 @@ export const SESSION_SCHEME = 'prepaid-session';
 export const HEADER_VOUCHER = 'payment-voucher';
 export const ZERO32 = '0x' + '00'.repeat(32);
 export const MAX_UINT96 = (1n << 96n) - 1n;
+const HALF_N = 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0n;
 
 export const VOUCHER_TYPES = Object.freeze({
   Voucher: [
@@ -78,7 +79,9 @@ export function validateVoucher(v) {
     throw new ProtocolError('bad cumulative');
   }
   if (!Number.isInteger(v.count) || v.count < 1 || v.count >= 2 ** 32) throw new ProtocolError('bad count');
-  if (typeof v.signature !== 'string' || !/^0x[0-9a-fA-F]{130}$/.test(v.signature)) throw new ProtocolError('bad signature');
+  // exactly what the contract accepts: v = 27 or 28, low s. Anything looser recovers fine here and then cannot be redeemed.
+  if (typeof v.signature !== 'string' || !/^0x[0-9a-fA-F]{128}1[bBcC]$/.test(v.signature)) throw new ProtocolError('bad signature');
+  if (BigInt('0x' + v.signature.slice(66, 130)) > HALF_N) throw new ProtocolError('bad signature');
   return { session: v.session.toLowerCase(), cumulative: v.cumulative, count: v.count, head: v.head.toLowerCase(), signature: v.signature };
 }
 
@@ -128,6 +131,9 @@ export function replayLog(session, rows) {
 
 /**
  * Check a log against the redeemed batches read from the chain.
+ * A voucher commits to the response before it, not its own. So a batch up to request n proves requests 1..n and
+ * responses 1..n-1; the response to request n is acknowledged only once a voucher for n+1 exists.
+ * @param rows        log rows {n, requestHash, responseHash, cumulative}
  * @param redemptions [{count, head, cumulative}] as emitted by MeterSession.Redeemed
  * @returns {ok, checks: [{name, ok, detail}]}
  */
@@ -143,8 +149,10 @@ export function verifyLog(session, rows, redemptions) {
   }
   for (const r of redemptions) {
     const inLog = heads[r.count];
-    const ok = inLog !== undefined && inLog.toLowerCase() === r.head.toLowerCase();
-    checks.push({ name: `batch up to request ${r.count} matches the payer-signed head on-chain`, ok, detail: r.head });
+    const headOk = inLog !== undefined && inLog.toLowerCase() === r.head.toLowerCase();
+    const row = rows[r.count - 1];
+    const sumOk = r.cumulative === undefined || (row !== undefined && BigInt(row.cumulative ?? -1) === BigInt(r.cumulative));
+    checks.push({ name: `batch up to request ${r.count} matches the payer-signed head on-chain (responses 1 to ${r.count - 1} acknowledged)`, ok: headOk && sumOk, detail: r.head });
   }
   if (redemptions.length === 0) checks.push({ name: 'no redeemed batch yet', ok: true, detail: 'nothing on-chain to compare' });
   return { ok: checks.every(c => c.ok), checks };

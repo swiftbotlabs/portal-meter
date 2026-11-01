@@ -1,6 +1,7 @@
 // Buyer side of a session: request -> 402 quote -> checks -> signed voucher -> body + provider receipt.
 // Runs on Node.js and in the browser. The client keeps its own count, cumulative and head, so a seller cannot make
-// it sign more than one price per request; `sync()` exists for a key shared between visitors (the public demo).
+// it sign more than one price per request. If a response gets lost it sends the same voucher again, which the seller
+// answers with the same response at no extra charge. `resume()` recovers a client that lost its place by one step.
 import { getAddress, keccak256, verifyMessage } from 'ethers';
 import { HEADER_REQUIRED, HEADER_RESPONSE, b64json, chainIdOf, parseB64json, requestHash } from './protocol.mjs';
 import { HEADER_VOUCHER, SESSION_VERSION, ZERO32, genesisHead, nextHead, sessionReceiptMessage, signVoucher, validateSessionQuote } from './session.mjs';
@@ -16,7 +17,7 @@ export class SessionError extends Error {}
  */
 export class SessionClient {
   constructor(o) {
-    Object.assign(this, { signer: o.signer, session: o.session.toLowerCase(), expect: o.expect, maxPrice: o.maxPrice, fetch: o.fetch || globalThis.fetch.bind(globalThis) });
+    Object.assign(this, { signer: o.signer, session: o.session.toLowerCase(), expect: o.expect, maxPrice: o.maxPrice, retries: o.retries, fetch: o.fetch || globalThis.fetch.bind(globalThis) });
     this.state = o.state || { count: 0, cumulative: '0', head: genesisHead(this.session), lastResponseHash: ZERO32 };
   }
 
@@ -30,6 +31,18 @@ export class SessionClient {
     if (BigInt(q.price) > this.maxPrice) throw new SessionError(`price ${q.price} above max ${this.maxPrice}`);
     if (q.requestHash !== requestHash('GET', url.pathname, url.searchParams)) throw new SessionError('quote is bound to a different request');
     return q;
+  }
+
+  /**
+   * Recover after a crash between sending a voucher and saving the answer. `view` is the seller's public session view.
+   * It may be at most one request ahead, and that step is accepted without its response: that one request is lost.
+   */
+  resume(view) {
+    const s = this.state;
+    if (view.count === s.count) return false;
+    if (view.count !== s.count + 1 || BigInt(view.cumulative) - BigInt(s.cumulative) > this.maxPrice) throw new SessionError('seller state is not one step ahead: stop signing for this provider');
+    this.state = { count: view.count, cumulative: view.cumulative, head: view.head, lastResponseHash: view.lastResponseHash };
+    return true;
   }
 
   /** One paid GET. `onStep` receives each stage, for the live page. */
@@ -49,7 +62,15 @@ export class SessionClient {
     });
     onStep('voucher', voucher);
 
-    const res = await this.fetch(url, { headers: { accept: 'application/json', [HEADER_VOUCHER]: b64json(voucher) } });
+    const headers = { accept: 'application/json', [HEADER_VOUCHER]: b64json(voucher) };
+    let res = null;
+    for (let attempt = 0; res === null; attempt++) {
+      try {
+        res = await this.fetch(url, { headers });
+      } catch (e) {
+        if (attempt >= (this.retries ?? 2)) throw e;
+      }
+    }
     const body = new Uint8Array(await res.arrayBuffer());
     if (res.status !== 200) return { status: res.status, body, receipt: null, charged: false, quote: q, voucher };
     const rh = res.headers.get(HEADER_RESPONSE);

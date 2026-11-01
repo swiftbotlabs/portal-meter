@@ -14,10 +14,10 @@ export const SESSION_ABI = [
   'event SessionOpened(bytes32 indexed session, uint32 indexed endpointId, address indexed payer, address signer, uint96 amount, uint40 expiresAt, bytes32 nonce)',
   'event SessionToppedUp(bytes32 indexed session, uint96 amount, uint96 deposit)',
   'event Redeemed(bytes32 indexed session, uint32 indexed endpointId, bytes32 head, uint96 cumulative, uint96 paid, uint32 count)',
-  'event SessionClosed(bytes32 indexed session, address indexed payer, uint96 returned, bool byProvider)',
+  'event SessionClosed(bytes32 indexed session, address indexed payer, uint96 returned)',
   'error UnknownEndpoint()', 'error EndpointInactive()', 'error ZeroAmount()', 'error ZeroAddress()', 'error BadExpiry()',
   'error SessionExists()', 'error NoSession()', 'error BadSignature()', 'error NotNewer()', 'error OverBudget()',
-  'error NotAllowed()', 'error TooEarly()', 'error TokenCallFailed()',
+  'error NotAllowed()', 'error TooEarly()', 'error TokenCallFailed()', 'error FeeOnTransfer()',
 ];
 
 export const sessionIface = new Interface(SESSION_ABI);

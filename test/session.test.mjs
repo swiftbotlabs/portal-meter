@@ -95,11 +95,24 @@ test('verifyLog accepts the real log and rejects an edited one', () => {
   const edited = rows.map((r, i) => (i === 1 ? { ...r, responseHash: a } : r)); // a provider rewrites response 2
   assert.equal(verifyLog(s, edited, [{ count: 3, head: heads[3] }]).ok, false);
   assert.equal(verifyLog(s, rows.slice(0, 2), [{ count: 3, head: heads[3] }]).ok, false); // log cut short
+  // the response to the last redeemed request is not covered by that batch, and the check says so
+  const lastEdited = rows.map((r, i) => (i === 2 ? { ...r, responseHash: b } : r));
+  const v = verifyLog(s, lastEdited, [{ count: 3, head: heads[3] }]);
+  assert.equal(v.ok, true);
+  assert.match(v.checks[1].name, /responses 1 to 2 acknowledged/);
+  const summed = rows.map((r, i) => ({ ...r, cumulative: String((i + 1) * 10) }));
+  assert.equal(verifyLog(s, summed, [{ count: 3, head: heads[3], cumulative: 30n }]).ok, true);
+  assert.equal(verifyLog(s, summed, [{ count: 3, head: heads[3], cumulative: 31n }]).ok, false); // amount does not add up
 });
 
 test('validateVoucher refuses malformed input', () => {
   const good = { session: '0x' + 'ab'.repeat(32), cumulative: '10', count: 1, head: '0x' + 'cd'.repeat(32), signature: '0x' + '11'.repeat(65) };
-  assert.ok(validateVoucher(good));
+  assert.throws(() => validateVoucher(good), /bad signature/); // v = 0x11
+  const ok = { ...good, signature: '0x' + '11'.repeat(64) + '1b' };
+  assert.ok(validateVoucher(ok));
+  assert.ok(validateVoucher({ ...good, signature: '0x' + '11'.repeat(64) + '1C' }));
+  for (const vbyte of ['00', '01', '23', '24', '25', 'ff']) assert.throws(() => validateVoucher({ ...good, signature: '0x' + '11'.repeat(64) + vbyte }), /bad signature/, vbyte); // ethers accepts these, ecrecover does not
+  assert.throws(() => validateVoucher({ ...good, signature: '0x' + '11'.repeat(32) + 'ff'.repeat(32) + '1b' }), /bad signature/); // high s
   for (const bad of [
     null, 7, {}, { ...good, session: '0x12' }, { ...good, cumulative: '0' }, { ...good, cumulative: '-1' }, { ...good, cumulative: 10 },
     { ...good, cumulative: (1n << 96n).toString() }, { ...good, count: 0 }, { ...good, count: 1.5 }, { ...good, count: 2 ** 32 },
@@ -134,7 +147,8 @@ test('e2e: 50 requests, one redeem pays the payee exactly, close returns the res
   assert.equal(verifyLog(c.session, log, [{ count: 50, head: ev.args.head }]).ok, true);
   assert.ok(batchHash(c.session, v.cumulative, v.count, v.head).startsWith('0x'));
 
-  await mined(sessionContract(c.address, c.providerKey).close(c.session), c.chain.provider);
+  await c.chain.warp(86_400 + 901);
+  await mined(sessionContract(c.address, c.payer).close(c.session), c.chain.provider);
   assert.equal(await c.token.balanceOf(c.payer.address), 9n * BUDGET + BUDGET - 50n * PRICE);
 });
 
@@ -182,6 +196,128 @@ test('the meter refuses every bad voucher before the handler runs', async t => {
   assert.equal((await send(good)).status, 200); // the honest voucher still works afterwards
 });
 
+test('a voucher the contract could not redeem is refused, so the seller is never left unpaid', async t => {
+  const c = await setup(t);
+  const cl = c.client();
+  const url = new URL(`${c.base}/a`);
+  const v = await signVoucher(c.sessionKey, c.chain.chainId, c.address, {
+    session: c.session, cumulative: PRICE, count: 1, head: nextHead(cl.state.head, requestHash('GET', url.pathname, url.searchParams), ZERO32),
+  });
+  const low = BigInt('0x' + v.signature.slice(-2)) - 27n; // same signature, v = 0 or 1: ethers recovers it, ecrecover does not
+  const bad = { ...v, signature: v.signature.slice(0, -2) + low.toString(16).padStart(2, '0') };
+  const before = c.calls();
+  const r = await fetch(url, { headers: { [HEADER_VOUCHER]: b64json(bad) } });
+  assert.equal(r.status, 400);
+  assert.equal(c.calls(), before);
+});
+
+test('a lost response: the same voucher returns the same body, charges nothing more, and the chain still extends', async t => {
+  const c = await setup(t);
+  const cl = c.client();
+  await cl.get(`${c.base}/a`);
+  const url = new URL(`${c.base}/b`);
+  const s = cl.state;
+  const v = await signVoucher(c.sessionKey, c.chain.chainId, c.address, {
+    session: c.session, cumulative: BigInt(s.cumulative) + PRICE, count: s.count + 1, head: nextHead(s.head, requestHash('GET', url.pathname, url.searchParams), s.lastResponseHash),
+  });
+  const headers = { [HEADER_VOUCHER]: b64json(v) };
+  const first = await fetch(url, { headers });
+  const firstBody = await first.text();
+  const again = await fetch(url, { headers });
+  assert.equal(again.status, 200);
+  assert.equal(await again.text(), firstBody);
+  assert.equal(again.headers.get(HEADER_RESPONSE), first.headers.get(HEADER_RESPONSE));
+  assert.equal(c.calls(), 2);
+  assert.equal((await c.ledger.get(c.session)).count, 2);
+  // resume() accepts one step ahead and refuses more
+  const view = await c.meter.sessionView(c.session);
+  assert.equal(cl.resume(view), true);
+  assert.equal((await cl.get(`${c.base}/c`)).receipt.count, 3);
+  const behind = c.client();
+  assert.throws(() => behind.resume({ ...view, count: 3 }), /not one step ahead/);
+});
+
+test('a client retries the same voucher when the network drops', async t => {
+  const c = await setup(t);
+  let drops = 1;
+  const flaky = new SessionClient({
+    signer: c.sessionKey, session: c.session, expect: c.expect, maxPrice: PRICE,
+    fetch: async (u, init) => {
+      if (init.headers[HEADER_VOUCHER] && drops-- > 0) {
+        await fetch(u, init); // the seller serves it, the answer is lost
+        throw new TypeError('network error');
+      }
+      return fetch(u, init);
+    },
+  });
+  const r = await flaky.get(`${c.base}/a`);
+  assert.equal(r.status, 200);
+  assert.equal(r.receipt.count, 1);
+  assert.equal(c.calls(), 1);
+});
+
+test('strangers cannot hold the session lock, and random ids stay off the chain', async t => {
+  const c = await setup(t);
+  const cl = c.client();
+  await cl.get(`${c.base}/a`);
+  const url = new URL(`${c.base}/b`);
+  const junk = { session: c.session, cumulative: '1', count: 9, head: '0x' + '22'.repeat(32), signature: '0x' + '33'.repeat(64) + '1b' };
+  const r = await fetch(url, { headers: { [HEADER_VOUCHER]: b64json(junk) } });
+  assert.equal(r.status, 401); // refused on the signature, before any lock
+  assert.equal((await cl.get(`${c.base}/b`)).status, 200);
+
+  let reads = 0;
+  const meter = createMeter({
+    chainId: c.chain.chainId, sessionContract: c.address, endpointId: 1, wallet: c.providerKey, token: c.tokenAddress, tokenSymbol: 'tUSDm', decimals: 6,
+    readSession: async () => { reads += 1; return null; },
+  });
+  const id = '0x' + 'ab'.repeat(32);
+  for (let i = 0; i < 5; i++) await assert.rejects(meter.sessionView(id), /no such session/);
+  assert.equal(reads, 1);
+});
+
+test('sessionView cannot roll back a request served while the chain was answering', async t => {
+  const c = await setup(t);
+  const cl = c.client();
+  await cl.get(`${c.base}/a`);
+  const reader = c.reader;
+  let release;
+  const gate = new Promise(r => { release = r; });
+  const slow = createMeter({
+    chainId: c.chain.chainId, sessionContract: c.address, endpointId: 1, wallet: c.providerKey, token: c.tokenAddress, tokenSymbol: 'tUSDm', decimals: 6, ledger: c.ledger, refreshSec: 0,
+    readSession: async id => { await gate; return readSession(reader, id); },
+  });
+  const pending = slow.sessionView(c.session); // reads the row, then waits on the chain
+  await new Promise(r => setTimeout(r, 20));
+  const row = await c.ledger.get(c.session);
+  await c.ledger.put(c.session, { ...row, count: 2, cumulative: (2n * PRICE).toString() }); // a request lands meanwhile
+  release();
+  await pending;
+  assert.equal((await c.ledger.get(c.session)).count, 2);
+});
+
+test('seller policy: minimum budget, minimum life, stuck sessions, unsettled credit', async t => {
+  const c = await setup(t);
+  const base = { chainId: c.chain.chainId, sessionContract: c.address, endpointId: 1, wallet: c.providerKey, token: c.tokenAddress, tokenSymbol: 'tUSDm', decimals: 6, readSession: id => readSession(c.reader, id) };
+  await assert.rejects(createMeter({ ...base, minDeposit: BUDGET + 1n }).sessionView(c.session), /below the minimum/);
+  await assert.rejects(createMeter({ ...base, minLifeSec: 90_000 }).sessionView(c.session), /expires too soon/);
+  const cl = c.client();
+  await cl.get(`${c.base}/a`);
+  const row = await c.ledger.get(c.session);
+  await c.ledger.put(c.session, { ...row, stuck: 'revert' });
+  assert.equal((await cl.get(`${c.base}/b`)).status, 409);
+  await c.ledger.put(c.session, row);
+  const ledger = new MemoryLedger();
+  const capped = createMeter({ ...base, ledger, maxUnsettled: PRICE });
+  const server = http.createServer((req, res) => capped.charge(nodeRequest(req, `http://${req.headers.host}`), { price: PRICE }, async () => ({ ok: 1 })).then(x => sendNode(res, x)));
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  t.after(() => server.close());
+  const u = `http://127.0.0.1:${server.address().port}`;
+  const m2 = new SessionClient({ signer: c.sessionKey, session: c.session, expect: c.expect, maxPrice: PRICE });
+  assert.equal((await m2.get(`${u}/a`)).status, 200);
+  assert.equal((await m2.get(`${u}/b`)).status, 409);
+});
+
 test('a voucher for one request cannot buy another', async t => {
   const c = await setup(t);
   const cl = c.client();
@@ -211,10 +347,11 @@ test('the budget is a hard stop, and a top-up reopens it', async t => {
 test('closed, expired and foreign sessions are refused', async t => {
   const c = await setup(t);
   const cl = c.client();
-  await c.chain.warp(86_401);
-  c.clock.offset = 86_401;
+  c.clock.offset = 86_400 - 1000; // inside the margin kept for settling
   assert.equal((await cl.get(`${c.base}/a`)).status, 410);
-  await mined(sessionContract(c.address, c.providerKey).close(c.session), c.chain.provider);
+  await c.chain.warp(86_400 + 901);
+  c.clock.offset = 86_400 + 901;
+  await mined(sessionContract(c.address, c.payer).close(c.session), c.chain.provider);
   await assert.rejects(c.meter.loadState(c.session, { force: true }), /closed/);
 });
 
@@ -254,4 +391,10 @@ test('metered() puts a price on an Express-style route', async t => {
   const r = await cl.get(`${base}/priced?a=1`);
   assert.equal(r.status, 200);
   assert.deepEqual(JSON.parse(new TextDecoder().decode(r.body)), { echo: '/priced?a=1' });
+  // a method a Web Request refuses must not take the process down
+  const res = await new Promise(resolve => {
+    http.request(`${base}/x`, { method: 'TRACE' }, resolve).end();
+  });
+  assert.equal(res.statusCode, 400);
+  assert.equal((await fetch(`${base}/priced?a=1`)).status, 402);
 });

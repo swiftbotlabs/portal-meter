@@ -20,9 +20,10 @@ interface IEndpoints {
 ///         so the payer's signature for request n acknowledges the exact response it received for request n-1.
 ///         The chain itself is checked off-chain; the contract only verifies the signature and publishes `head`,
 ///         which makes every redeemed batch a payer-signed record of what was delivered, not a provider's claim.
-/// @dev Built for pallet-revive's storage deposits: a session is 3 slots, written once. Redeeming only updates a
-///      slot, so it locks nothing new. `close` clears 2 of the 3 slots and keeps the first, so that a session id
-///      can never be reopened and old vouchers can never be replayed.
+/// @dev Built for pallet-revive's storage deposits: a session is 3 slots, all paid for by the payer at `open`. Redeeming
+///      only updates a slot, so the provider locks nothing here. `close` clears 2 of the 3 slots, which returns their
+///      deposit to the payer, and keeps the first, so that a session id can never be reopened and old vouchers can
+///      never be replayed.
 contract MeterSession {
     // ---------------------------------------------------------------- types
     struct Session {
@@ -33,11 +34,12 @@ contract MeterSession {
         uint96 deposit; // token base units locked so far
         uint96 redeemed; // cumulative amount already paid to the payee
         uint32 count; // requests covered by the last redeemed voucher
+        bool funded; // keeps this slot non-zero, so that the payer pays its deposit at open, not the provider at redeem
     }
 
     uint32 public constant MIN_DURATION = 10 minutes;
     uint32 public constant MAX_DURATION = 30 days;
-    /// @notice Time after expiry during which only the provider can act, so a last voucher can still be redeemed.
+    /// @notice Time after expiry during which the payer cannot close, so that a last voucher can still be redeemed.
     uint32 public constant CLOSE_GRACE = 15 minutes;
 
     bytes32 private constant DOMAIN_TYPEHASH =
@@ -66,7 +68,7 @@ contract MeterSession {
     event Redeemed(
         bytes32 indexed session, uint32 indexed endpointId, bytes32 head, uint96 cumulative, uint96 paid, uint32 count
     );
-    event SessionClosed(bytes32 indexed session, address indexed payer, uint96 returned, bool byProvider);
+    event SessionClosed(bytes32 indexed session, address indexed payer, uint96 returned);
 
     // ---------------------------------------------------------------- errors
     error UnknownEndpoint();
@@ -82,6 +84,7 @@ contract MeterSession {
     error NotAllowed();
     error TooEarly();
     error TokenCallFailed();
+    error FeeOnTransfer();
 
     constructor(IEndpoints settlement) {
         if (address(settlement) == address(0)) revert ZeroAddress();
@@ -111,7 +114,8 @@ contract MeterSession {
         s.expiresAt = expiresAt;
         s.signer = signer;
         s.deposit = amount;
-        _call(token, abi.encodeWithSelector(0x23b872dd, msg.sender, address(this), uint256(amount)));
+        s.funded = true;
+        _pull(token, amount);
         emit SessionOpened(id, endpointId, msg.sender, signer, amount, expiresAt, nonce);
     }
 
@@ -121,7 +125,7 @@ contract MeterSession {
         Session storage s = _open(id);
         s.deposit += amount;
         (,, address token,,,) = endpoints.endpoint(s.endpointId);
-        _call(token, abi.encodeWithSelector(0x23b872dd, msg.sender, address(this), uint256(amount)));
+        _pull(token, amount);
         emit SessionToppedUp(id, amount, s.deposit);
     }
 
@@ -145,25 +149,23 @@ contract MeterSession {
     }
 
     // ---------------------------------------------------------------- end of a session
-    /// @notice Return what is unspent to the payer. The provider may do it at any time; the payer once the session
-    ///         has expired and the grace period has passed.
+    /// @notice Return what is unspent to the payer, once the session has expired and the grace period has passed.
+    ///         Only the payer may do it: whoever clears storage gets its deposit back, and the payer paid for it.
     function close(bytes32 id) external {
         Session storage s = _open(id);
-        (address provider,, address token,,,) = endpoints.endpoint(s.endpointId);
-        bool byProvider = msg.sender == provider;
         address payer = s.payer;
-        if (!byProvider) {
-            if (msg.sender != payer) revert NotAllowed();
-            if (block.timestamp < uint256(s.expiresAt) + CLOSE_GRACE) revert TooEarly();
-        }
+        if (msg.sender != payer) revert NotAllowed();
+        if (block.timestamp < uint256(s.expiresAt) + CLOSE_GRACE) revert TooEarly();
+        (,, address token,,,) = endpoints.endpoint(s.endpointId);
         uint96 back = s.deposit - s.redeemed;
         s.expiresAt = 0;
         s.signer = address(0);
         s.deposit = 0;
         s.redeemed = 0;
         s.count = 0;
+        s.funded = false;
         if (back != 0) _call(token, abi.encodeWithSelector(0xa9059cbb, payer, uint256(back)));
-        emit SessionClosed(id, payer, back, byProvider);
+        emit SessionClosed(id, payer, back);
     }
 
     // ---------------------------------------------------------------- views
@@ -208,6 +210,20 @@ contract MeterSession {
         if (uint256(s) > HALF_N) revert BadSignature();
         signer = ecrecover(digest, v, r, s);
         if (signer == address(0)) revert BadSignature();
+    }
+
+    /// @dev All sessions of a token share one balance, so a token that delivers less than it was told to move would let
+    ///      one session eat into another. Such tokens are refused.
+    function _pull(address token, uint96 amount) private {
+        uint256 before = _balance(token);
+        _call(token, abi.encodeWithSelector(0x23b872dd, msg.sender, address(this), uint256(amount)));
+        if (_balance(token) != before + amount) revert FeeOnTransfer();
+    }
+
+    function _balance(address token) private view returns (uint256) {
+        (bool ok, bytes memory ret) = token.staticcall(abi.encodeWithSelector(0x70a08231, address(this)));
+        if (!ok || ret.length != 32) revert TokenCallFailed();
+        return abi.decode(ret, (uint256));
     }
 
     /// @dev Accepts tokens that return true or nothing (USDT style); anything else reverts.

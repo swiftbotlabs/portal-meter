@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {Test} from "forge-std/Test.sol";
 import {MeterSettlement} from "../src/MeterSettlement.sol";
 import {MeterSession, IEndpoints} from "../src/MeterSession.sol";
-import {MockERC20, NoReturnToken, FalseToken, ReenterOnTransfer} from "./Mocks.sol";
+import {MockERC20, NoReturnToken, FalseToken, ReenterOnTransfer, FeeToken} from "./Mocks.sol";
 
 contract MeterSessionTest is Test {
     MeterSettlement settlement;
@@ -235,13 +235,17 @@ contract MeterSessionTest is Test {
         assertEq(usd.balanceOf(address(m)), 0);
     }
 
-    function test_close_providerAnytime_strangerNever() public {
+    function test_close_onlyThePayer() public {
         bytes32 id = _open();
+        vm.warp(block.timestamp + 2 days);
         vm.prank(other);
         vm.expectRevert(MeterSession.NotAllowed.selector);
         m.close(id);
+        vm.prank(provider); // the provider cannot take the payer's storage deposit by clearing the session
+        vm.expectRevert(MeterSession.NotAllowed.selector);
+        m.close(id);
         uint256 before = usd.balanceOf(buyer);
-        vm.prank(provider);
+        vm.prank(buyer);
         m.close(id);
         assertEq(usd.balanceOf(buyer), before + BUDGET);
     }
@@ -250,14 +254,15 @@ contract MeterSessionTest is Test {
         bytes32 id = _open();
         bytes32 h = keccak256("x");
         bytes memory sig = _sign(signerKey, id, 30_000, 3, h);
-        vm.prank(provider);
+        vm.warp(block.timestamp + 2 days);
+        vm.prank(buyer);
         m.close(id);
         vm.expectRevert(MeterSession.NoSession.selector);
         _redeem(id, 30_000, 3, h, sig);
         vm.prank(buyer);
         vm.expectRevert(MeterSession.SessionExists.selector); // old vouchers stay dead
         m.open(endpointId, NONCE, signer, BUDGET, uint40(block.timestamp + 1 days));
-        vm.prank(provider);
+        vm.prank(buyer);
         vm.expectRevert(MeterSession.NoSession.selector);
         m.close(id);
         (address p,, uint40 x,, uint96 d,,) = m.session(id);
@@ -284,6 +289,18 @@ contract MeterSessionTest is Test {
         vm.prank(buyer);
         vm.expectRevert(MeterSession.TokenCallFailed.selector);
         m.open(e2, NONCE, signer, BUDGET, uint40(block.timestamp + 1 days));
+    }
+
+    function test_feeOnTransferToken_refused() public {
+        FeeToken f = new FeeToken();
+        f.mint(buyer, BUDGET * 2);
+        vm.prank(provider);
+        uint32 e = settlement.registerEndpoint(payee, address(f), PRICE, 600);
+        vm.startPrank(buyer);
+        f.approve(address(m), BUDGET);
+        vm.expectRevert(MeterSession.FeeOnTransfer.selector);
+        m.open(e, NONCE, signer, BUDGET, uint40(block.timestamp + 1 days));
+        vm.stopPrank();
     }
 
     function test_reentrantToken_cannotDoubleSpend() public {
@@ -313,8 +330,9 @@ contract MeterSessionTest is Test {
         bytes32 id = m.open(endpointId, NONCE, signer, budget, uint40(block.timestamp + 1 days));
         bytes32 h = keccak256("x");
         _redeem(id, spent, 1, h, _sign(signerKey, id, spent, 1, h));
+        vm.warp(block.timestamp + 2 days);
         uint256 before = usd.balanceOf(buyer);
-        vm.prank(provider);
+        vm.prank(buyer);
         m.close(id);
         assertEq(usd.balanceOf(payee), spent);
         assertEq(usd.balanceOf(buyer) - before, budget - spent);

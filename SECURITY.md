@@ -24,6 +24,34 @@ history. The registry also records what providers declare; a provider that pays 
 "served" count. The verifier detects anchors that have no matching `Served`/`Refunded` event, and `rate` gives
 real payers a voice, but sybil-resistant reputation is out of scope.
 
+## Sessions (`MeterSession`, voucher protocol, hosted seller)
+
+| Threat | Defence |
+|---|---|
+| Replay of a voucher | `redeem` only accepts a higher `cumulative` and `count`; the signature covers session, cumulative, count and head; the EIP-712 domain binds chain and contract |
+| Reopening a closed session to replay old vouchers | `close` keeps the first slot, and `open` refuses an id that was ever used |
+| Voucher copied from a pending batch to make it revert | `redeem` is provider-only |
+| A session key spending more than its budget | `redeem` refuses `cumulative` above the deposit; the seller checks the same before serving |
+| Malleable signatures | `s` must be in the lower half of the curve order, the length must be 65 |
+| Provider redeeming what was not served | it holds at most one unserved voucher, because the next one needs the previous response. The client checks every receipt and stops signing on a mismatch |
+| Provider rewriting history | the head signed by the payer stops matching: `verifyLog` replays the public log against the `Redeemed` event |
+| Hostile token | state is final before every token call (tested with a token that re-enters `redeem`); an endpoint's token is fixed at registration, and it only affects sessions of that endpoint |
+| Provider never redeems, payer stuck | after expiry plus 15 minutes the payer can close and take back what is unspent |
+
+Hosted seller (`worker/`):
+- The provider key is a testnet key for this seller only, with a small tPOT balance, stored as a Worker secret. It holds no other funds.
+- `/admin/settle` needs a bearer token compared in constant time. Without it the route answers 404.
+- Per-address limits: 60 quotes, 30 paid requests, 240 free reads a minute, plus a global limit on paid requests.
+- Upstream calls are serialised with a 220 ms gap, so the public Portaldot nodes never see more than 5 requests a second from this
+  service, and the queue is capped at 40. Paid responses are cached for 15 seconds per path.
+- Input is validated before a quote is issued, and the seller only talks to the two configured nodes. No user-supplied URL is fetched.
+- The public demo key on the live page is derived from a public string on purpose. It can only sign vouchers for one session of test
+  tokens, capped on-chain, and the only place that session pays is our own payee.
+
+Not covered: an endpoint token that charges a fee on transfer would make the contract's book exceed its balance for that token.
+Native assets do not do that. pallet-assets accounts have a minimum balance, so an amount below it cannot be paid to an empty
+account; the first redeem of a session must be at least that minimum (0.01 pUSD).
+
 ## Seller
 
 - GET only, URL ≤ 2,048 bytes, header block ≤ 16 KB, `PAYMENT` header ≤ 4 KB, strict base64/JSON parsing with a
