@@ -10,17 +10,18 @@ const dep = existsSync(join(PATHS.root, 'deployments', 'testnet.json'))
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const short = (h, n = 8) => (h && h.length > 2 * n + 4 ? `${h.slice(0, n + 2)}…${h.slice(-n)}` : h);
 const EXPLORER = 'https://scanner-testnet-v3.portaldot.dev';
-const tx = label => dep?.transactions?.find(t => t.label.startsWith(label));
+const tx = label => dep?.transactions?.findLast(t => t.label.startsWith(label));
 const counts = JSON.parse(readFileSync(join(PATHS.root, 'pitch', 'counts.json'), 'utf8'));
 
 const proofRows = dep ? [
   ['MeterSettlement (Solidity, EVM)', dep.settlement, `deploy ${short(dep.settlementTx)} · block ${dep.settlementBlock}`],
   ['MeterRegistry (ink!, WASM)', dep.registry.address, `instantiate ${short(dep.registry.instantiateTx)} · block ${dep.registry.block}`],
   [`Native asset #${dep.token.assetId} ${dep.token.symbol}`, dep.token.precompile, 'ERC-20 precompile address'],
-  ['Endpoints: Solidity + ink! in one Ethereum tx', tx('provider: register')?.hash, `block ${tx('provider: register')?.block ?? ''}`],
-  ['Served request: settle + ink! anchor, one tx', tx('provider: settle')?.hash, `block ${tx('provider: settle')?.block ?? ''}`],
-  ['Refunded request: refund + ink! anchor, one tx', tx('provider: refund')?.hash, `block ${tx('provider: refund')?.block ?? ''}`],
-  ['Buyer confirms in ink! from its EVM key', tx('buyer: confirm')?.hash, `block ${tx('buyer: confirm')?.block ?? ''}`],
+  ['Endpoints listed in ink! from the provider\'s Ethereum key', tx('provider: list')?.hash, `block ${tx('provider: list')?.block ?? ''}`],
+  ['Paid request: buyer pays into escrow', tx('buyer: pay request (served')?.hash, `block ${tx('buyer: pay request (served')?.block ?? ''}`],
+  ['Served: settle + ink! anchor, one Ethereum tx', tx('provider: settle the served request in Solidity + anchor')?.hash, `block ${tx('provider: settle the served request in Solidity + anchor')?.block ?? ''}`],
+  ['Refunded: refund + ink! anchor, one Ethereum tx', tx('provider: refund the undeliverable request in Solidity + anchor')?.hash, `block ${tx('provider: refund the undeliverable request in Solidity + anchor')?.block ?? ''}`],
+  ['Buyer confirms in ink! from its Ethereum key', tx('buyer: confirm')?.hash, `block ${tx('buyer: confirm')?.block ?? ''}`],
 ] : [];
 
 const slides = [];
@@ -80,7 +81,7 @@ slide('proof', `
       </div>
       <ul class="small">
         <li>CI on every push: Foundry, ink! release build (cargo-contract 5.0.3), Node end to end</li>
-        <li>Measured on the live testnet: the ink! code is accepted by an instantiate dry-run; Ethereum transactions to the runtime pallets address dispatch <code>batchAll(revive.call, contracts.call)</code></li>
+        <li>14 negative checks on the live contracts: replays, strangers and tampered receipts are refused</li>
         <li>Live page reads both VMs from the browser and verifies receipts</li>
         <li>Open source, MIT: github.com/swiftbotlab/portal-meter</li>
       </ul>
@@ -89,7 +90,7 @@ slide('proof', `
   </div>`);
 
 slide('proof', `
-  <h2>Testnet deployment</h2>
+  <h2>Live on the PortaldotV3 testnet</h2>
   ${dep ? `<table>${proofRows.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="mono">${esc(short(b, 10))}</td><td>${esc(c)}</td></tr>`).join('')}</table>
   <p class="note">All transactions with blocks: deployments/testnet.json · live page: swiftbotlab.github.io/portal-meter/demo · explorer ${esc(EXPLORER)}</p>`
     : `<div class="placeholder"><b>PLACEHOLDER: filled after the testnet deployment</b><br>

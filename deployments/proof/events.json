@@ -73,5 +73,78 @@
       "reason": "3",
       "byProvider": "true"
     }
+  },
+  {
+    "event": "Paid",
+    "block": 276645,
+    "tx": "0x918da875f56c975e0aeaa95e9630ebc9ad88fdc59413d5ce24d23023df3df27e",
+    "args": {
+      "requestId": "0x5f2a69baa218293d6afa05ae18162773f9fd177d56aa99a9e3199e2cf36cd3b8",
+      "endpointId": "2",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "10000",
+      "nonce": "0x0973599df6e0a61e1017732a6010e9708aa37739b7c2974fe39a01fe93558f45"
+    }
+  },
+  {
+    "event": "Served",
+    "block": 276646,
+    "tx": "0x4902c5a30982f0c3706c795554a04aea4d83113d21654fa5f88655752a1ce30b",
+    "args": {
+      "requestId": "0x5f2a69baa218293d6afa05ae18162773f9fd177d56aa99a9e3199e2cf36cd3b8",
+      "endpointId": "2",
+      "payee": "0x77df5A7c0375bE0A492C109CcaFB96551fa8Ca5C",
+      "amount": "10000",
+      "responseHash": "0x519d1a4532bc88f12d6f0c02cc96d84dab887d74f2cb1c1e21e3890a2bc0e87e"
+    }
+  },
+  {
+    "event": "Paid",
+    "block": 276657,
+    "tx": "0x75b80a21c8b42251c6234a5dbbdecc2e8ae4e991ac2457268ac174dae28a7e8e",
+    "args": {
+      "requestId": "0x0dd18719dc273c1cb04329710be74fa663c16accdf435139cedf953074aedc6e",
+      "endpointId": "1",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "25000",
+      "nonce": "0x466eb864951297c69d7fa3c409d23b093db59ad3dfdef661573bd2f37939209c"
+    }
+  },
+  {
+    "event": "Served",
+    "block": 276658,
+    "tx": "0xf5264278d35ec75998992133da8fe8bc7bb8de5f7040137ba3353f1e7e0bacb6",
+    "args": {
+      "requestId": "0x0dd18719dc273c1cb04329710be74fa663c16accdf435139cedf953074aedc6e",
+      "endpointId": "1",
+      "payee": "0x77df5A7c0375bE0A492C109CcaFB96551fa8Ca5C",
+      "amount": "25000",
+      "responseHash": "0xc315af7bb0b907af78a5874b04f8f1078425a58bdc40b8a0faf1c62ece03ba19"
+    }
+  },
+  {
+    "event": "Paid",
+    "block": 276659,
+    "tx": "0xd511d2f40d3b05ae6e18bd61bf94c757c21d9e9a3eaad3dad0fffa6fc5984c86",
+    "args": {
+      "requestId": "0x4175ff9cee359bc48daaa9f96389231ca0c4c1fc02616f3f4243fa96a7ccb930",
+      "endpointId": "2",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "10000",
+      "nonce": "0x6cbcab44b58f99cb427eb04257bb3732c9d1867464fc96136709620a3d616152"
+    }
+  },
+  {
+    "event": "Refunded",
+    "block": 276660,
+    "tx": "0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314",
+    "args": {
+      "requestId": "0x4175ff9cee359bc48daaa9f96389231ca0c4c1fc02616f3f4243fa96a7ccb930",
+      "endpointId": "2",
+      "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+      "amount": "10000",
+      "reason": "3",
+      "byProvider": "true"
+    }
   }
 ]

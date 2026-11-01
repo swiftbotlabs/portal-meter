@@ -62,10 +62,12 @@ export async function buy(url, o) {
   const allowance = BigInt(await token.allowance(wallet.address, q.settlement));
   const price = BigInt(ep.price);
   let approveTx = null;
+  let approveBlock = null;
   if (allowance < price) {
     const amount = o.approveAmount && o.approveAmount > price ? o.approveAmount : price;
     const r = await sendTx(wallet, { to: ep.token, data: token.interface.encodeFunctionData('approve', [q.settlement, amount]) });
     approveTx = r.hash;
+    approveBlock = r.blockNumber;
     log(`approved ${formatUnits(amount, q.decimals)} ${q.tokenSymbol}: ${r.hash}`);
   }
   const payReceipt = await sendTx(wallet, { to: q.settlement, data: settlementIface.encodeFunctionData('pay', [q.endpointId, q.nonce, price]) });
@@ -92,5 +94,5 @@ export async function buy(url, o) {
   const body = Buffer.from(await res.arrayBuffer());
   const rh = res.headers.get(HEADER_RESPONSE);
   const receipt = rh ? parseB64json(rh, 16_384) : null;
-  return { status: res.status, body, receipt, paid: true, payTx: payReceipt.hash, approveTx, requestId: expectedRid, quote: q, reputation };
+  return { status: res.status, body, receipt, paid: true, payTx: payReceipt.hash, payBlock: payReceipt.blockNumber, approveTx, approveBlock, requestId: expectedRid, quote: q, reputation };
 }

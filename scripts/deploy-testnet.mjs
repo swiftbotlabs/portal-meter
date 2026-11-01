@@ -163,6 +163,21 @@ try {
     done('fund');
   }
 
+  // ---------------------------------------------------------------- topup: EVM half already live, ink! follows
+  if (!NO_INK && want('topup')) {
+    const calls = [];
+    for (const r of ['PROVIDER', 'BUYER']) {
+      const twin = twinSs58(W[r].address);
+      const have = await freeOf(twin);
+      if (have < FUND[r]) calls.push(api.tx.balances.transferKeepAlive(twin, FUND[r] - have));
+    }
+    if (calls.length) {
+      const res = await submit(api, sub, api.tx.utility.batchAll(calls));
+      noteTx('top up the provider and buyer keys from the sr25519 account', 'substrate', res.hash, res.block, { extrinsic: `${res.block}-${res.index}` });
+    }
+    done('topup');
+  }
+
   // ---------------------------------------------------------------- asset
   if (want('asset')) {
     let id = state.token?.assetId;
@@ -274,6 +289,17 @@ try {
     done('endpoints');
   }
 
+  // ---------------------------------------------------------------- list: endpoints from Solidity into ink!, one tx
+  if (ink && want('list')) {
+    const providerTwin = twinSs58(W.PROVIDER.address);
+    const calls = [];
+    for (const e of state.endpoints) calls.push((await ink.buildCall(providerTwin, 'registerEndpoint', e.id, u8aToHex(new TextEncoder().encode(e.uri)))).call);
+    const { receipt } = await sendBatchFromEvmKey(api, W.PROVIDER, calls);
+    noteTx('provider: list both endpoints in the ink! registry, one Ethereum tx (contracts.call batch via the runtime pallets address)', 'evm -> substrate', receipt.hash, receipt.blockNumber);
+    log(`  ink! endpoint 1: ${JSON.stringify(await ink.endpoint(W.PROVIDER.address, 1))}`);
+    done('list');
+  }
+
   // ---------------------------------------------------------------- demo: one served request, one refund
   if (want('demo')) {
     const upstream = portaldotUpstream(api, evm, { assets: [state.token.assetId] });
@@ -318,25 +344,60 @@ try {
         results.push(rec);
         mkdirSync(join(DEPLOY_DIR, 'receipts'), { recursive: true });
         writeFileSync(join(DEPLOY_DIR, 'receipts', `${c.name}.json`), JSON.stringify(rec, null, 2) + '\n');
-        if (r.approveTx) noteTx('buyer: approve the settlement contract on the tUSDm precompile', 'evm', r.approveTx, null);
-        noteTx(`buyer: pay request (${c.name} case)`, 'evm', r.payTx, null);
+        if (r.approveTx) noteTx('buyer: approve the settlement contract on the tUSDm precompile', 'evm', r.approveTx, r.approveBlock);
+        noteTx(`buyer: pay request (${c.name} case)`, 'evm', r.payTx, r.payBlock);
         const verb = c.name === 'served' ? 'settle the served request' : 'refund the undeliverable request';
         if (ink) noteTx(`provider: ${verb} in Solidity + anchor in ink!, one Ethereum tx`, 'evm -> substrate', r.receipt.tx, r.receipt.block);
         else noteTx(`provider: ${verb} (Solidity)`, 'evm', r.receipt.tx, r.receipt.block);
       }
       // buyer confirms the served request in the ink! registry, from its EVM key
-      if (ink) {
-        const served = results.find(x => x.name === 'served');
-        const { call } = await ink.buildCall(twinSs58(W.BUYER.address), 'rate', W.PROVIDER.address, 1, served.receipt.nonce, true);
-        const rr = await sendCallFromEvmKey(W.BUYER, call);
-        noteTx('buyer: confirm the served request in ink! (contracts.call from its EVM key)', 'evm -> substrate', rr.hash, rr.blockNumber);
-        log(`  reputation now: ${JSON.stringify(await ink.reputation(W.PROVIDER.address, 1))}`);
-      }
     } finally {
       server.close();
     }
     state.sampleReceipt = 'deployments/receipts/served.json';
     done('demo');
+  }
+
+  // ---------------------------------------------------------------- rate: the buyer confirms in ink! from its EVM key
+  if (ink && want('rate')) {
+    const served = JSON.parse(readFileSync(join(DEPLOY_DIR, 'receipts', 'served.json'), 'utf8'));
+    const { call } = await ink.buildCall(twinSs58(W.BUYER.address), 'rate', W.PROVIDER.address, 1, served.receipt.nonce, true);
+    const rr = await sendCallFromEvmKey(W.BUYER, call);
+    noteTx('buyer: confirm the served request in ink! (contracts.call from its EVM key)', 'evm -> substrate', rr.hash, rr.blockNumber);
+    log(`  reputation now: ${JSON.stringify(await ink.reputation(W.PROVIDER.address, 1))}`);
+    log(`  anchor feedback: ${(await ink.anchor(W.PROVIDER.address, served.receipt.requestId)).feedback} (1 = confirmed)`);
+    done('rate');
+  }
+
+  // ---------------------------------------------------------------- xvm: one Ethereum tx across pallets, no ink! needed
+  if (ONLY.includes('xvm')) {
+    const routes = makeRoutes({
+      upstream: portaldotUpstream(api, evm, { assets: [state.token.assetId] }), token: state.token.precompile,
+      tokenSymbol: state.token.symbol, decimals: state.token.decimals,
+      endpoints: { account: { id: 1, price: PRICES.account }, asset: { id: 2, price: PRICES.asset } },
+    });
+    const server = createSeller({
+      chain: { chainId: NETWORK.chainId, settlementAddress: state.settlement, settlement: settlementContract(state.settlement, evm) },
+      provider: W.PROVIDER.address, signer: W.PROVIDER,
+      settler: new XvmSettler({ api, wallet: W.PROVIDER, settlementAddress: state.settlement, inkRegistry: ink }),
+      store: new Store(join(PATHS.root, 'deployments', '.seller-state.json')),
+      registry: { kind: 'none', address: null }, routes, log: (...a) => log('  seller:', ...a),
+    });
+    await new Promise(r => server.listen(SELLER_PORT, '127.0.0.1', r));
+    try {
+      const url = `http://127.0.0.1:${SELLER_PORT}/v1/asset/${state.token.assetId}`;
+      const r = await buy(url, { wallet: W.BUYER, expect: { chainId: NETWORK.chainId, settlement: state.settlement, token: state.token.precompile }, maxPrice: 50_000n, log: m => log('  buyer:', m) });
+      log(`  -> HTTP ${r.status}, outcome ${r.receipt?.outcome}, via ${r.receipt?.settledVia}, tx ${r.receipt?.tx}`);
+      if (!r.receipt) throw new Error(`no receipt: ${r.body.toString().slice(0, 300)}`);
+      const v = await verifyReceipt(r.receipt, { evm, expect: { chainId: NETWORK.chainId, settlement: state.settlement }, body: r.body, fromBlock: state.fromBlock });
+      console.log(formatReport(v));
+      writeFileSync(join(DEPLOY_DIR, 'receipts', 'xvm-served.json'), JSON.stringify({ name: 'xvm-served', status: r.status, payTx: r.payTx, receipt: r.receipt, body: r.body.toString('utf8'), verification: v }, null, 2) + '\n');
+      noteTx('buyer: pay request (cross-pallet case)', 'evm', r.payTx, r.payBlock);
+      noteTx('provider: settle in Solidity + anchor the receipt hash in system.remarkWithEvent, one Ethereum tx (utility.batchAll via the runtime pallets address)', 'evm -> substrate', r.receipt.tx, r.receipt.block);
+    } finally {
+      server.close();
+    }
+    done('xvm');
   }
 
   // ---------------------------------------------------------------- publish

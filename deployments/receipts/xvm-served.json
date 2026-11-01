@@ -1,0 +1,116 @@
+{
+  "name": "xvm-served",
+  "status": 200,
+  "payTx": "0x918da875f56c975e0aeaa95e9630ebc9ad88fdc59413d5ce24d23023df3df27e",
+  "receipt": {
+    "amount": "10000",
+    "block": 276646,
+    "endpointId": 2,
+    "issuedAt": 1793531682,
+    "network": "eip155:420420777",
+    "nonce": "0x0973599df6e0a61e1017732a6010e9708aa37739b7c2974fe39a01fe93558f45",
+    "outcome": "served",
+    "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "provider": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "receiptHash": "0x32f4fc4fd5235fac6c38960b7b238a2f56b7072a5544a3787ab6e542d478a7b3",
+    "registry": {
+      "address": null,
+      "kind": "none"
+    },
+    "requestHash": "0x87fff93754b2b2876cf2c7ee33fc6305ab993f29bdc88b43cdff0240ff16c517",
+    "requestId": "0x5f2a69baa218293d6afa05ae18162773f9fd177d56aa99a9e3199e2cf36cd3b8",
+    "responseHash": "0x519d1a4532bc88f12d6f0c02cc96d84dab887d74f2cb1c1e21e3890a2bc0e87e",
+    "settledVia": "xvm",
+    "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "signature": "0x3aeb7bff7b74228992642c4d3721913409762b1310babddbcbfe11be7d458c6c585d97a17a8c7f22a905ea12f0edb84698f95819b4b400b3c054dc07c44ea28c1b",
+    "token": "0x0000ab8300000000000000000000000000010000",
+    "tx": "0x4902c5a30982f0c3706c795554a04aea4d83113d21654fa5f88655752a1ce30b",
+    "v": "portal-meter/1"
+  },
+  "body": "{\n  \"at\": {\n    \"number\": 276645,\n    \"hash\": \"0xdbfd168377e54d03a55970cdee50fdd9919f3354c15aab3c8fe972c08c280ea2\"\n  },\n  \"assetId\": 43907,\n  \"owner\": \"5ETkpnDAeRU46becz38vSSP42vWoBnzZ2e4FFRbG6W3hVBdC\",\n  \"supply\": \"1000000000\",\n  \"accounts\": 3,\n  \"minBalance\": \"1\",\n  \"status\": \"Live\",\n  \"name\": \"Portal Meter Test USD\",\n  \"symbol\": \"tUSDm\",\n  \"decimals\": 6,\n  \"erc20\": {\n    \"precompile\": \"0x0000ab8300000000000000000000000000010000\",\n    \"totalSupply\": \"1000000000\",\n    \"matchesSubstrate\": true\n  }\n}\n",
+  "verification": {
+    "verdict": "ACCEPT",
+    "checks": [
+      {
+        "name": "receipt format",
+        "ok": true,
+        "detail": "portal-meter/1"
+      },
+      {
+        "name": "network",
+        "ok": true,
+        "detail": "eip155:420420777 (expected eip155:420420777)"
+      },
+      {
+        "name": "settlement contract",
+        "ok": true,
+        "detail": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e"
+      },
+      {
+        "name": "provider signature",
+        "ok": true,
+        "detail": "signed by 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599"
+      },
+      {
+        "name": "receipt hash",
+        "ok": true,
+        "detail": "0x32f4fc4fd5235fac6c38960b7b238a2f56b7072a5544a3787ab6e542d478a7b3"
+      },
+      {
+        "name": "request id bound to payer",
+        "ok": true,
+        "detail": "keccak256(chainId, settlement, payer, endpointId, nonce)"
+      },
+      {
+        "name": "response body hash",
+        "ok": true,
+        "detail": "0x519d1a4532bc88f12d6f0c02cc96d84dab887d74f2cb1c1e21e3890a2bc0e87e"
+      },
+      {
+        "name": "endpoint provider on-chain",
+        "ok": true,
+        "detail": "endpoint 2 provider 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599"
+      },
+      {
+        "name": "endpoint token",
+        "ok": true,
+        "detail": "0x0000ab8300000000000000000000000000010000"
+      },
+      {
+        "name": "payment status",
+        "ok": true,
+        "detail": "on-chain: served"
+      },
+      {
+        "name": "payment payer",
+        "ok": true,
+        "detail": "0x0118d896dC979963341e9449218e63E158CB6AbA"
+      },
+      {
+        "name": "payment endpoint",
+        "ok": true,
+        "detail": "2"
+      },
+      {
+        "name": "Paid event",
+        "ok": true,
+        "detail": "tx 0x918da875f56c975e0aeaa95e9630ebc9ad88fdc59413d5ce24d23023df3df27e, amount 10000"
+      },
+      {
+        "name": "Served event",
+        "ok": true,
+        "detail": "tx 0x4902c5a30982f0c3706c795554a04aea4d83113d21654fa5f88655752a1ce30b, payee 0x77df5A7c0375bE0A492C109CcaFB96551fa8Ca5C"
+      },
+      {
+        "name": "settlement tx matches receipt",
+        "ok": true,
+        "detail": "0x4902c5a30982f0c3706c795554a04aea4d83113d21654fa5f88655752a1ce30b"
+      },
+      {
+        "name": "ink! registry anchor",
+        "ok": null,
+        "detail": "no registry configured"
+      }
+    ]
+  }
+}

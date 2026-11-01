@@ -1,0 +1,89 @@
+{
+  "checkedAt": "2026-11-01T11:17:48.754Z",
+  "checks": [
+    {
+      "check": "settle a request that is already served",
+      "expected": "NotPaid",
+      "got": "NotPaid",
+      "ok": true
+    },
+    {
+      "check": "refund a request that is already served",
+      "expected": "NotPaid",
+      "got": "NotPaid",
+      "ok": true
+    },
+    {
+      "check": "settle a refunded request",
+      "expected": "NotPaid",
+      "got": "NotPaid",
+      "ok": true
+    },
+    {
+      "check": "pay again with a spent nonce",
+      "expected": "RequestExists",
+      "got": "RequestExists",
+      "ok": true
+    },
+    {
+      "check": "pay above the buyer limit",
+      "expected": "PriceAboveMax",
+      "got": "PriceAboveMax",
+      "ok": true
+    },
+    {
+      "check": "payer rates the same request twice",
+      "expected": "AlreadyRated",
+      "got": "AlreadyRated",
+      "ok": true
+    },
+    {
+      "check": "a stranger rates the request (id recomputed from the caller)",
+      "expected": "NoSuchAnchor",
+      "got": "NoSuchAnchor",
+      "ok": true
+    },
+    {
+      "check": "payer rates a refunded request",
+      "expected": "NotServed",
+      "got": "NotServed",
+      "ok": true
+    },
+    {
+      "check": "a stranger records into the provider namespace",
+      "expected": "NotRegistered",
+      "got": "NotRegistered",
+      "ok": true
+    },
+    {
+      "check": "provider anchors the same request twice",
+      "expected": "AlreadyAnchored",
+      "got": "AlreadyAnchored",
+      "ok": true
+    },
+    {
+      "check": "genuine receipt + body",
+      "expected": "ACCEPT",
+      "got": "ACCEPT",
+      "ok": true
+    },
+    {
+      "check": "genuine receipt, forged body",
+      "expected": "REJECT",
+      "got": "REJECT",
+      "ok": true
+    },
+    {
+      "check": "amount changed in the receipt",
+      "expected": "REJECT",
+      "got": "REJECT",
+      "ok": true
+    },
+    {
+      "check": "served receipt rewritten as refunded",
+      "expected": "REJECT",
+      "got": "REJECT",
+      "ok": true
+    }
+  ]
+}

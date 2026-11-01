@@ -2,35 +2,35 @@
   "name": "refunded",
   "request": "/v1/asset/1043907",
   "status": 404,
-  "payTx": "0xcacb9a74ee80cfc806722fb4b859422719f630d9bc5a1debf2abf4a42c16dab0",
+  "payTx": "0xd511d2f40d3b05ae6e18bd61bf94c757c21d9e9a3eaad3dad0fffa6fc5984c86",
   "approveTx": null,
   "receipt": {
     "amount": "10000",
-    "block": 276619,
+    "block": 276660,
     "endpointId": 2,
-    "issuedAt": 1793531497,
+    "issuedAt": 1793531768,
     "network": "eip155:420420777",
-    "nonce": "0xf89abd75375e7e95a146d31f927dcb1837d86cbb64be887a36b4951a97b75948",
+    "nonce": "0x6cbcab44b58f99cb427eb04257bb3732c9d1867464fc96136709620a3d616152",
     "outcome": "refunded",
     "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
     "provider": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
-    "receiptHash": "0xe9d42e938253a87fec5180587378079f10b5fb582f13f83755e3a8824e23ee6e",
+    "receiptHash": "0x6920f5599cea7a4d5be323f229295fc37e3954e92f609c1047d9031f75a81085",
     "refundReason": 3,
     "registry": {
-      "address": null,
-      "kind": "none"
+      "address": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4",
+      "kind": "ink"
     },
     "requestHash": "0x7b70fb45423e438641bcf407117c96af1e486d84d345059d2e2779b2f4ae9804",
-    "requestId": "0x6eb795b683212e23fabe6339c5cffe8bd62edd58af93be57fffdc903f88721e6",
+    "requestId": "0x4175ff9cee359bc48daaa9f96389231ca0c4c1fc02616f3f4243fa96a7ccb930",
     "responseHash": "0x107eee6b0e503d8faa5fe9278abbbccd2eb61f00a52672680e77cbedd4609d83",
-    "settledVia": "evm",
+    "settledVia": "xvm",
     "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
-    "signature": "0x9ebc3dd336e4180885558d33ff1becae901e1e2c4a7ca6f744562f27cadf147d374cf56f6176563a26f487ef20431d476c33abb04fa1119409efbcbc716376d91b",
+    "signature": "0xeddf3447e15d289a96d9ee1f7b1cd1b34f182bea32838416ab28f5553fff7b8e6028f2a3250509e9e508815fb3b1ce222b6c81d32223d856034e07cb0c0967791c",
     "token": "0x0000ab8300000000000000000000000000010000",
-    "tx": "0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf",
+    "tx": "0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314",
     "v": "portal-meter/1"
   },
-  "body": "{\n  \"error\": \"asset 1043907 does not exist\",\n  \"refunded\": true,\n  \"receipt\": {\n    \"v\": \"portal-meter/1\",\n    \"network\": \"eip155:420420777\",\n    \"settlement\": \"0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e\",\n    \"registry\": {\n      \"kind\": \"none\",\n      \"address\": null\n    },\n    \"provider\": \"0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599\",\n    \"endpointId\": 2,\n    \"requestId\": \"0x6eb795b683212e23fabe6339c5cffe8bd62edd58af93be57fffdc903f88721e6\",\n    \"nonce\": \"0xf89abd75375e7e95a146d31f927dcb1837d86cbb64be887a36b4951a97b75948\",\n    \"payer\": \"0x0118d896dC979963341e9449218e63E158CB6AbA\",\n    \"amount\": \"10000\",\n    \"token\": \"0x0000ab8300000000000000000000000000010000\",\n    \"requestHash\": \"0x7b70fb45423e438641bcf407117c96af1e486d84d345059d2e2779b2f4ae9804\",\n    \"responseHash\": \"0x107eee6b0e503d8faa5fe9278abbbccd2eb61f00a52672680e77cbedd4609d83\",\n    \"outcome\": \"refunded\",\n    \"receiptHash\": \"0xe9d42e938253a87fec5180587378079f10b5fb582f13f83755e3a8824e23ee6e\",\n    \"tx\": \"0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf\",\n    \"block\": 276619,\n    \"settledVia\": \"evm\",\n    \"refundReason\": 3,\n    \"issuedAt\": 1793531497,\n    \"signature\": \"0x9ebc3dd336e4180885558d33ff1becae901e1e2c4a7ca6f744562f27cadf147d374cf56f6176563a26f487ef20431d476c33abb04fa1119409efbcbc716376d91b\"\n  }\n}\n",
+  "body": "{\n  \"error\": \"asset 1043907 does not exist\",\n  \"refunded\": true,\n  \"receipt\": {\n    \"v\": \"portal-meter/1\",\n    \"network\": \"eip155:420420777\",\n    \"settlement\": \"0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e\",\n    \"registry\": {\n      \"kind\": \"ink\",\n      \"address\": \"5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4\"\n    },\n    \"provider\": \"0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599\",\n    \"endpointId\": 2,\n    \"requestId\": \"0x4175ff9cee359bc48daaa9f96389231ca0c4c1fc02616f3f4243fa96a7ccb930\",\n    \"nonce\": \"0x6cbcab44b58f99cb427eb04257bb3732c9d1867464fc96136709620a3d616152\",\n    \"payer\": \"0x0118d896dC979963341e9449218e63E158CB6AbA\",\n    \"amount\": \"10000\",\n    \"token\": \"0x0000ab8300000000000000000000000000010000\",\n    \"requestHash\": \"0x7b70fb45423e438641bcf407117c96af1e486d84d345059d2e2779b2f4ae9804\",\n    \"responseHash\": \"0x107eee6b0e503d8faa5fe9278abbbccd2eb61f00a52672680e77cbedd4609d83\",\n    \"outcome\": \"refunded\",\n    \"receiptHash\": \"0x6920f5599cea7a4d5be323f229295fc37e3954e92f609c1047d9031f75a81085\",\n    \"tx\": \"0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314\",\n    \"block\": 276660,\n    \"settledVia\": \"xvm\",\n    \"refundReason\": 3,\n    \"issuedAt\": 1793531768,\n    \"signature\": \"0xeddf3447e15d289a96d9ee1f7b1cd1b34f182bea32838416ab28f5553fff7b8e6028f2a3250509e9e508815fb3b1ce222b6c81d32223d856034e07cb0c0967791c\"\n  }\n}\n",
   "verification": {
     "verdict": "ACCEPT",
     "checks": [
@@ -57,7 +57,7 @@
       {
         "name": "receipt hash",
         "ok": true,
-        "detail": "0xe9d42e938253a87fec5180587378079f10b5fb582f13f83755e3a8824e23ee6e"
+        "detail": "0x6920f5599cea7a4d5be323f229295fc37e3954e92f609c1047d9031f75a81085"
       },
       {
         "name": "request id bound to payer",
@@ -97,22 +97,22 @@
       {
         "name": "Paid event",
         "ok": true,
-        "detail": "tx 0xcacb9a74ee80cfc806722fb4b859422719f630d9bc5a1debf2abf4a42c16dab0, amount 10000"
+        "detail": "tx 0xd511d2f40d3b05ae6e18bd61bf94c757c21d9e9a3eaad3dad0fffa6fc5984c86, amount 10000"
       },
       {
         "name": "Refunded event",
         "ok": true,
-        "detail": "tx 0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf, reason 3, by provider"
+        "detail": "tx 0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314, reason 3, by provider"
       },
       {
         "name": "refund tx matches receipt",
         "ok": true,
-        "detail": "0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf"
+        "detail": "0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314"
       },
       {
         "name": "ink! registry anchor",
-        "ok": null,
-        "detail": "no registry configured"
+        "ok": true,
+        "detail": "ink registry: outcome 2, block 276660, receipt hash 0x6920f5599cea7a4d..."
       }
     ]
   }

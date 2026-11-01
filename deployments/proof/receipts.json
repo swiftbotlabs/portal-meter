@@ -229,5 +229,246 @@
         "index": 6
       }
     ]
+  },
+  {
+    "label": "buyer: pay request (cross-pallet case)",
+    "hash": "0x918da875f56c975e0aeaa95e9630ebc9ad88fdc59413d5ce24d23023df3df27e",
+    "block": 276645,
+    "blockHash": "0x950c075033e53fbecbdc0665a71601bc464ca5543b849d99ea68f74ba0de2426",
+    "status": 1,
+    "from": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "to": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "contractAddress": null,
+    "gasUsed": "307753767487383",
+    "gasPrice": "25035",
+    "costTpot": 7.704615,
+    "logs": [
+      {
+        "address": "0x0000ab8300000000000000000000000000010000",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba",
+          "0x0000000000000000000000009e7ad2aa754a0eba70cfbd1db01d25ef97e5781e"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000000000002710",
+        "index": 4
+      },
+      {
+        "address": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+        "topics": [
+          "0xde088db371f18326757772b208226f6406852c83c3a5002046bb4ca4e903c344",
+          "0x5f2a69baa218293d6afa05ae18162773f9fd177d56aa99a9e3199e2cf36cd3b8",
+          "0x0000000000000000000000000000000000000000000000000000000000000002",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000027100973599df6e0a61e1017732a6010e9708aa37739b7c2974fe39a01fe93558f45",
+        "index": 5
+      }
+    ]
+  },
+  {
+    "label": "provider: settle in Solidity + anchor the receipt hash in system.remarkWithEvent, one Ethereum tx (utility.batchAll via the runtime pallets address)",
+    "hash": "0x4902c5a30982f0c3706c795554a04aea4d83113d21654fa5f88655752a1ce30b",
+    "block": 276646,
+    "blockHash": "0xb9057f9e68eec52bcd7c700daeed287a09c54fdb70f2dc3dbdad7856c3c80be1",
+    "status": 1,
+    "from": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "to": "0x6D6f646c70792F70616464720000000000000000",
+    "contractAddress": null,
+    "gasUsed": "0",
+    "gasPrice": "0",
+    "costTpot": 0,
+    "logs": [
+      {
+        "address": "0x0000ab8300000000000000000000000000010000",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000009e7ad2aa754a0eba70cfbd1db01d25ef97e5781e",
+          "0x00000000000000000000000077df5a7c0375be0a492c109ccafb96551fa8ca5c"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000000000002710",
+        "index": 5
+      },
+      {
+        "address": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+        "topics": [
+          "0x0af5b5cfd52c1f17b4adcf88718133c8438ec80b776a460e41972f6491fe843e",
+          "0x5f2a69baa218293d6afa05ae18162773f9fd177d56aa99a9e3199e2cf36cd3b8",
+          "0x0000000000000000000000000000000000000000000000000000000000000002"
+        ],
+        "data": "0x00000000000000000000000077df5a7c0375be0a492c109ccafb96551fa8ca5c0000000000000000000000000000000000000000000000000000000000002710519d1a4532bc88f12d6f0c02cc96d84dab887d74f2cb1c1e21e3890a2bc0e87e",
+        "index": 6
+      }
+    ]
+  },
+  {
+    "label": "provider: list both endpoints in the ink! registry, one Ethereum tx (contracts.call batch via the runtime pallets address)",
+    "hash": "0x7c14d9debd223cc01974022bc64e05aa90f9bea08c36560aa4a6b012f6cc569b",
+    "block": 276656,
+    "blockHash": "0x963973659b484ff50b5968630057ea4d02e2ef6c47c93ba4e8fd6ffd283deed9",
+    "status": 1,
+    "from": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "to": "0x6D6f646c70792F70616464720000000000000000",
+    "contractAddress": null,
+    "gasUsed": "0",
+    "gasPrice": "0",
+    "costTpot": 0,
+    "logs": []
+  },
+  {
+    "label": "buyer: pay request (served case)",
+    "hash": "0x75b80a21c8b42251c6234a5dbbdecc2e8ae4e991ac2457268ac174dae28a7e8e",
+    "block": 276657,
+    "blockHash": "0x7fc43bb7dc8e4bad9b59158510bf69214a014f4c6e35d01650433b8d12e26662",
+    "status": 1,
+    "from": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "to": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "contractAddress": null,
+    "gasUsed": "307753767470098",
+    "gasPrice": "25035",
+    "costTpot": 7.704615,
+    "logs": [
+      {
+        "address": "0x0000ab8300000000000000000000000000010000",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba",
+          "0x0000000000000000000000009e7ad2aa754a0eba70cfbd1db01d25ef97e5781e"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000061a8",
+        "index": 5
+      },
+      {
+        "address": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+        "topics": [
+          "0xde088db371f18326757772b208226f6406852c83c3a5002046bb4ca4e903c344",
+          "0x0dd18719dc273c1cb04329710be74fa663c16accdf435139cedf953074aedc6e",
+          "0x0000000000000000000000000000000000000000000000000000000000000001",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000061a8466eb864951297c69d7fa3c409d23b093db59ad3dfdef661573bd2f37939209c",
+        "index": 6
+      }
+    ]
+  },
+  {
+    "label": "provider: settle the served request in Solidity + anchor in ink!, one Ethereum tx",
+    "hash": "0xf5264278d35ec75998992133da8fe8bc7bb8de5f7040137ba3353f1e7e0bacb6",
+    "block": 276658,
+    "blockHash": "0x69a800164f27e671ace6f4e60d3dc31c543c08d6058970ee7fcbbc4d1d5c6e54",
+    "status": 1,
+    "from": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "to": "0x6D6f646c70792F70616464720000000000000000",
+    "contractAddress": null,
+    "gasUsed": "0",
+    "gasPrice": "0",
+    "costTpot": 0,
+    "logs": [
+      {
+        "address": "0x0000ab8300000000000000000000000000010000",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000009e7ad2aa754a0eba70cfbd1db01d25ef97e5781e",
+          "0x00000000000000000000000077df5a7c0375be0a492c109ccafb96551fa8ca5c"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000061a8",
+        "index": 5
+      },
+      {
+        "address": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+        "topics": [
+          "0x0af5b5cfd52c1f17b4adcf88718133c8438ec80b776a460e41972f6491fe843e",
+          "0x0dd18719dc273c1cb04329710be74fa663c16accdf435139cedf953074aedc6e",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0x00000000000000000000000077df5a7c0375be0a492c109ccafb96551fa8ca5c00000000000000000000000000000000000000000000000000000000000061a8c315af7bb0b907af78a5874b04f8f1078425a58bdc40b8a0faf1c62ece03ba19",
+        "index": 6
+      }
+    ]
+  },
+  {
+    "label": "buyer: pay request (refunded case)",
+    "hash": "0xd511d2f40d3b05ae6e18bd61bf94c757c21d9e9a3eaad3dad0fffa6fc5984c86",
+    "block": 276659,
+    "blockHash": "0x40c88695943fe853d82cd08fc8094998947fd6a11ebc720f478fb3372bed69c5",
+    "status": 1,
+    "from": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "to": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+    "contractAddress": null,
+    "gasUsed": "307753767467228",
+    "gasPrice": "25035",
+    "costTpot": 7.704615,
+    "logs": [
+      {
+        "address": "0x0000ab8300000000000000000000000000010000",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba",
+          "0x0000000000000000000000009e7ad2aa754a0eba70cfbd1db01d25ef97e5781e"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000000000002710",
+        "index": 5
+      },
+      {
+        "address": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+        "topics": [
+          "0xde088db371f18326757772b208226f6406852c83c3a5002046bb4ca4e903c344",
+          "0x4175ff9cee359bc48daaa9f96389231ca0c4c1fc02616f3f4243fa96a7ccb930",
+          "0x0000000000000000000000000000000000000000000000000000000000000002",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000027106cbcab44b58f99cb427eb04257bb3732c9d1867464fc96136709620a3d616152",
+        "index": 6
+      }
+    ]
+  },
+  {
+    "label": "provider: refund the undeliverable request in Solidity + anchor in ink!, one Ethereum tx",
+    "hash": "0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314",
+    "block": 276660,
+    "blockHash": "0x9bea2c8245e8603f7aaea6ea918a6bf0670421f9bcc64f84eba0f8362e0dcc99",
+    "status": 1,
+    "from": "0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599",
+    "to": "0x6D6f646c70792F70616464720000000000000000",
+    "contractAddress": null,
+    "gasUsed": "0",
+    "gasPrice": "0",
+    "costTpot": 0,
+    "logs": [
+      {
+        "address": "0x0000ab8300000000000000000000000000010000",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000009e7ad2aa754a0eba70cfbd1db01d25ef97e5781e",
+          "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000000000002710",
+        "index": 5
+      },
+      {
+        "address": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+        "topics": [
+          "0xaf0164d7d765ada5ecab1b829813ea53603852dd479d3912f0bb844d4fe90d37",
+          "0x4175ff9cee359bc48daaa9f96389231ca0c4c1fc02616f3f4243fa96a7ccb930",
+          "0x0000000000000000000000000000000000000000000000000000000000000002"
+        ],
+        "data": "0x0000000000000000000000000118d896dc979963341e9449218e63e158cb6aba000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001",
+        "index": 6
+      }
+    ]
+  },
+  {
+    "label": "buyer: confirm the served request in ink! (contracts.call from its EVM key)",
+    "hash": "0x91d0a18a7aee958852e8f1903981a5c526910976c899c86192ef2f7970cd3297",
+    "block": 276665,
+    "blockHash": "0xa06c1db4000deb7afbf0d278de6c0510c7b55a23c3c198bc8ea2153ceadecfe3",
+    "status": 1,
+    "from": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "to": "0x6D6f646c70792F70616464720000000000000000",
+    "contractAddress": null,
+    "gasUsed": "0",
+    "gasPrice": "0",
+    "costTpot": 0,
+    "logs": []
   }
 ]

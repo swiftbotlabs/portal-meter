@@ -64,11 +64,25 @@ deploy. Creating an asset costs `Assets.AssetDeposit` = 1 tPOT.
 The runtime exposes `revive.ethSubstrateCall` and `ReviveApi_runtime_pallets_address` returns
 `0x6d6f646c70792f70616464720000000000000000` (`"modlpy/paddr"`). An Ethereum transaction sent to that address with a
 SCALE-encoded runtime call as its input is dispatched as that call, signed by the sender's twin account.
-`eth_estimateGas` for a `system.remark` sent this way succeeds. Portal Meter uses this path so the provider's EVM key
-can also write to the ink! registry; see [ARCHITECTURE.md](ARCHITECTURE.md#cross-vm-path).
+Portal Meter uses this path so the provider's EVM key can also write to the ink! registry; see
+[ARCHITECTURE.md](ARCHITECTURE.md#cross-vm-path). What we saw on the live chain:
+
+- A top-level transaction is decoded and dispatched (`eth_estimateGas` of garbage input: `Invalid call`; of a transfer
+  from an empty account: `Token(FundsUnavailable)`; of a call to a missing ink! contract: `Contracts.ContractNotFound`).
+- A **Solidity contract** calling the same address is a call to an empty account: it returns success and nothing runs.
+- `utility.batchAll([revive.call, contracts.call])` works, `msg.sender` is the sender's H160, the ink! caller is its twin.
+- Logs of the batched `revive.call` appear in `eth_getLogs` under the Ethereum transaction's hash.
+- Receipts of these transactions report `gasUsed` 0, so read costs from balance changes.
 
 ## Faucet
 
 There is no public faucet. Test tPOT is distributed by the Portaldot team to registered builders (native `5...`
-address). Plan for the deposits: our full deployment (EVM settlement, ink! registry, native test asset, a few
-demo requests) needs on the order of 2,000 tPOT.
+address). Plan for the deposits. What our deployment cost in practice:
+
+| Step | tPOT |
+|---|---|
+| `MeterSettlement`, 3,454 bytes of initcode | 280.85 |
+| `MeterRegistry` (ink!), 16,090 bytes of wasm | 1,270.29 |
+| First endpoint in Solidity / each further one | 15.39 / 11.55 |
+| One paid request (buyer) | 7.70 |
+| Settle or refund (the freed slot covers it) | 0 |

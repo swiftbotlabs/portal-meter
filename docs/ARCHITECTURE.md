@@ -85,10 +85,10 @@ utility.batchAll([
 ```
 
 `batchAll` is all-or-nothing: either the Solidity settlement and the ink! anchor both happen, or neither does.
-The same path registers endpoints (two `registerEndpoint` calls and two `register_endpoint` calls in one
-transaction) and lets the buyer's Ethereum key call `rate` on the ink! contract. On the testnet, before the
-deployment, `eth_estimateGas` showed the runtime decoding and dispatching such batches (a batch whose ink! call
-targeted a non-contract failed with `Contracts.ContractNotFound`, a remark succeeded).
+The same path lists endpoints in the registry and lets the buyer's Ethereum key call `rate` on the ink! contract.
+All of this ran on the testnet: see the transactions in the [README](../README.md#testnet-deployment). `eth_getLogs`
+returns the `Served` and `Refunded` events of these runtime-dispatched calls under the Ethereum transaction's hash, so
+the verifier treats them like any other settlement.
 
 The fallback when the cross-VM path is not wanted is `EvmSettler`: plain Solidity calls, no anchor.
 

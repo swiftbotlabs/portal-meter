@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swiftbotlab/portal-meter/actions/workflows/ci.yml)
 
-**Pay-per-request API settlement for Portaldot V3, built for both of its contract VMs.**
+**Pay-per-request API settlement for Portaldot V3, running across both of its contract VMs.**
 
 An API provider lists an endpoint with a price. A client pays for **one request** in a Portaldot native asset,
 reached from Solidity through the runtime's ERC-20 precompile. The payment waits in escrow in a Solidity contract on
@@ -16,10 +16,8 @@ By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & M
 PortaldotV3 testnet from your browser (network, the native-asset ERC-20 precompile, contracts, endpoints, provider
 record, payments) and includes a free receipt verifier.
 
-> **Status (2026-11-01):** the Solidity settlement is **live on the PortaldotV3 testnet**: a real paid request and a
-> real refund went through, and both receipts verify. The ink! registry and the one-transaction cross-VM settlement
-> are built and tested; the registry is not on the testnet yet because its storage deposit exceeds the testnet funds
-> we hold so far (see [Testnet deployment](#testnet-deployment)).
+> **Live on the PortaldotV3 testnet since 2026-11-01:** both contracts, a real paid request and a real refund, each
+> settled in Solidity and anchored in ink! in one Ethereum transaction. See [Testnet deployment](#testnet-deployment).
 
 ## How a request is paid
 
@@ -61,29 +59,38 @@ PortaldotV3 testnet: EVM chain id `420420777`, `https://test-evm-rpc-v3.portaldo
 
 | | Address | Deployed in |
 |---|---|---|
-| `MeterSettlement` (Solidity, pallet-revive) | `0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e` | tx `0x1adf1c42…31227`, [block 276611](https://scanner-testnet-v3.portaldot.dev/blocks/276611) |
-| Payment token: native asset [#43907 tUSDm](https://scanner-testnet-v3.portaldot.dev/assets/43907) (test token) | ERC-20 precompile `0x0000ab8300000000000000000000000000010000` | [block 276610](https://scanner-testnet-v3.portaldot.dev/blocks/276610) |
-| `MeterRegistry` (ink!, pallet-contracts) | not deployed yet | `ContractsApi_instantiate` dry-run accepts the code; storage deposit 1,270 tPOT |
+| `MeterSettlement` (Solidity, pallet-revive) | `0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e` | [block 276611](https://scanner-testnet-v3.portaldot.dev/blocks/276611), tx `0x1adf1c422c9782a22d974dea3d2abc0be287da435747883e7895375d15731227` |
+| `MeterRegistry` (ink!, pallet-contracts) | [`5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4`](https://scanner-testnet-v3.portaldot.dev/accounts/5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4) | [block 276655](https://scanner-testnet-v3.portaldot.dev/blocks/276655), extrinsic `0xef17ab339d696959449ed2e94bd066fb86de2a1945297d0d3d7dc35f97bd60e0` |
+| Payment token: native asset [#43907 tUSDm](https://scanner-testnet-v3.portaldot.dev/assets/43907) (test token, no value) | ERC-20 precompile `0x0000ab8300000000000000000000000000010000` | [block 276610](https://scanner-testnet-v3.portaldot.dev/blocks/276610) |
 
-| Step | Transaction | Block | Cost |
-|---|---|---|---|
-| Provider registers endpoint 1 (account view, 0.025 tUSDm) | `0x44a7d0b4864bb4ea76649a1715401d3afde88ee56acffd64fb7600168bfdf39e` | [276612](https://scanner-testnet-v3.portaldot.dev/blocks/276612) | 15.39 tPOT |
-| Provider registers endpoint 2 (asset view, 0.010 tUSDm) | `0xf4f367da4236935df37377c20356141798f4c34c7c8baf8c15ccd80cd6d45ba6` | [276613](https://scanner-testnet-v3.portaldot.dev/blocks/276613) | 11.55 tPOT |
-| Buyer approves the settlement contract on the precompile | `0xca1867b45d46335dfe2c4b47254b4be6aff6cc01f3563897f99da7c55a68962b` | [276615](https://scanner-testnet-v3.portaldot.dev/blocks/276615) | 0.02 tPOT |
-| **Paid request:** buyer pays 0.025 tUSDm | `0x38aaaf8a83481db8f420d8a5ff2e88e70b35e7c9f5cd81a3c0d30c42903005a9` | [276616](https://scanner-testnet-v3.portaldot.dev/blocks/276616) | 7.70 tPOT |
-| **Served:** HTTP 200, provider settles to the payee | `0xa013c5400ea7c4e26bc90dd20a046a063921e7af2afb3a86f36cad0d30124713` | [276617](https://scanner-testnet-v3.portaldot.dev/blocks/276617) | 0 (freed deposit covers it) |
-| **Undeliverable request:** buyer pays 0.010 tUSDm for an asset that does not exist | `0xcacb9a74ee80cfc806722fb4b859422719f630d9bc5a1debf2abf4a42c16dab0` | [276618](https://scanner-testnet-v3.portaldot.dev/blocks/276618) | 7.70 tPOT |
-| **Refunded:** HTTP 404, provider refunds on-chain (reason 3) | `0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf` | [276619](https://scanner-testnet-v3.portaldot.dev/blocks/276619) | 0 |
+| Step | Transaction | Block |
+|---|---|---|
+| Provider registers endpoint 1 (account view, 0.025 tUSDm) in Solidity | `0x44a7d0b4864bb4ea76649a1715401d3afde88ee56acffd64fb7600168bfdf39e` | [276612](https://scanner-testnet-v3.portaldot.dev/blocks/276612) |
+| Provider registers endpoint 2 (asset view, 0.010 tUSDm) in Solidity | `0xf4f367da4236935df37377c20356141798f4c34c7c8baf8c15ccd80cd6d45ba6` | [276613](https://scanner-testnet-v3.portaldot.dev/blocks/276613) |
+| Provider lists both endpoints in ink!, **one Ethereum tx** | `0x7c14d9debd223cc01974022bc64e05aa90f9bea08c36560aa4a6b012f6cc569b` | [276656](https://scanner-testnet-v3.portaldot.dev/blocks/276656) |
+| Buyer approves the settlement contract on the precompile | `0xca1867b45d46335dfe2c4b47254b4be6aff6cc01f3563897f99da7c55a68962b` | [276615](https://scanner-testnet-v3.portaldot.dev/blocks/276615) |
+| **Paid request:** buyer pays 0.025 tUSDm into escrow | `0x75b80a21c8b42251c6234a5dbbdecc2e8ae4e991ac2457268ac174dae28a7e8e` | [276657](https://scanner-testnet-v3.portaldot.dev/blocks/276657) |
+| **Served:** HTTP 200; settle in Solidity + anchor in ink!, **one Ethereum tx** | `0xf5264278d35ec75998992133da8fe8bc7bb8de5f7040137ba3353f1e7e0bacb6` | [276658](https://scanner-testnet-v3.portaldot.dev/blocks/276658) |
+| **Undeliverable request:** buyer pays 0.010 tUSDm for an asset that does not exist | `0xd511d2f40d3b05ae6e18bd61bf94c757c21d9e9a3eaad3dad0fffa6fc5984c86` | [276659](https://scanner-testnet-v3.portaldot.dev/blocks/276659) |
+| **Refunded:** HTTP 404; refund in Solidity + anchor in ink!, **one Ethereum tx** | `0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314` | [276660](https://scanner-testnet-v3.portaldot.dev/blocks/276660) |
+| **Buyer confirms** in ink! from its Ethereum key (the contract recomputes the Solidity request id) | `0x91d0a18a7aee958852e8f1903981a5c526910976c899c86192ef2f7970cd3297` | [276665](https://scanner-testnet-v3.portaldot.dev/blocks/276665) |
 
-Everything is in [`deployments/testnet.json`](deployments/testnet.json). The signed receipts and the verifier's reports
-are in [`deployments/receipts/`](deployments/receipts), and receipts and events are archived in
-[`deployments/proof/`](deployments/proof) because the public RPC prunes old transaction receipts. Check a receipt yourself:
+Both receipts come back **ACCEPT** from the verifier, with the ink! anchor checked. Try it (no key needed):
 
 ```bash
-node bin/portal-meter.mjs verify deployments/receipts/served.json     # ACCEPT, no key needed
+node bin/portal-meter.mjs verify deployments/receipts/served.json
+node bin/portal-meter.mjs status        # endpoints and provider record, read from the ink! contract
+node scripts/negative-checks.mjs        # 14 dry-runs: replays, strangers and tampered receipts are refused
 ```
 
+Everything is in [`deployments/testnet.json`](deployments/testnet.json). Signed receipts and verifier reports are in
+[`deployments/receipts/`](deployments/receipts); receipts, events and the negative checks are archived in
+[`deployments/proof/`](deployments/proof), because the public RPC prunes old transaction receipts. Earlier runs on the
+same contract are kept too: `evm-*.json` (plain Solidity settlement) and `xvm-served.json` (settlement + a Substrate
+remark in one Ethereum transaction).
+
 The explorer indexes the Substrate side, so open the block (linked above) rather than searching for a `0x` hash.
+The demo seller ran on `127.0.0.1` for these requests; the URLs in the registry say so. There is no public seller yet.
 
 ## Run it
 
@@ -111,9 +118,10 @@ Key files are `0600` env files (`PORTALDOT_EVM_PROVIDER_KEY=0x…`, `PORTALDOT_E
 
 ```bash
 node scripts/keygen.mjs ~/portaldot_testnet.env          # sr25519 + three EVM keys, 0600, prints addresses only
-# fund the printed sr25519 address with testnet tPOT, then:
-node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env --plan   # cost estimate, sends nothing
-node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env          # resumable, step by step
+# fund the printed sr25519 address with testnet tPOT (about 1,850), then:
+node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env --plan      # cost estimate, sends nothing
+node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env             # resumable, step by step
+node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env --no-ink    # EVM half only, about 400 tPOT
 ```
 
 The ink! contract is built in CI (`cargo contract build --release`, cargo-contract 5.0.3); the bundle used for the

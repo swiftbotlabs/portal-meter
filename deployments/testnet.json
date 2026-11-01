@@ -71,6 +71,77 @@
       "hash": "0xd7119590fdbc7b5987547278ac8bd09e212f7b5195f1feb421ce9694d9ef5ebf",
       "block": 276619,
       "costTpot": 0
+    },
+    {
+      "label": "buyer: pay request (cross-pallet case)",
+      "layer": "evm",
+      "hash": "0x918da875f56c975e0aeaa95e9630ebc9ad88fdc59413d5ce24d23023df3df27e",
+      "block": 276645,
+      "costTpot": 7.704615
+    },
+    {
+      "label": "provider: settle in Solidity + anchor the receipt hash in system.remarkWithEvent, one Ethereum tx (utility.batchAll via the runtime pallets address)",
+      "layer": "evm -> substrate",
+      "hash": "0x4902c5a30982f0c3706c795554a04aea4d83113d21654fa5f88655752a1ce30b",
+      "block": 276646,
+      "costTpot": 0
+    },
+    {
+      "label": "top up the provider and buyer keys from the sr25519 account",
+      "layer": "substrate",
+      "hash": "0x6a7009a129be992c986dbe207010a917946b3347b3cf5315469406cb3e70ceb0",
+      "block": 276654,
+      "extrinsic": "276654-1"
+    },
+    {
+      "label": "instantiate MeterRegistry (ink!, pallet-contracts)",
+      "layer": "substrate",
+      "hash": "0xef17ab339d696959449ed2e94bd066fb86de2a1945297d0d3d7dc35f97bd60e0",
+      "block": 276655,
+      "extrinsic": "276655-1",
+      "address": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4"
+    },
+    {
+      "label": "provider: list both endpoints in the ink! registry, one Ethereum tx (contracts.call batch via the runtime pallets address)",
+      "layer": "evm -> substrate",
+      "hash": "0x7c14d9debd223cc01974022bc64e05aa90f9bea08c36560aa4a6b012f6cc569b",
+      "block": 276656,
+      "costTpot": 0
+    },
+    {
+      "label": "buyer: pay request (served case)",
+      "layer": "evm",
+      "hash": "0x75b80a21c8b42251c6234a5dbbdecc2e8ae4e991ac2457268ac174dae28a7e8e",
+      "block": 276657,
+      "costTpot": 7.704615
+    },
+    {
+      "label": "provider: settle the served request in Solidity + anchor in ink!, one Ethereum tx",
+      "layer": "evm -> substrate",
+      "hash": "0xf5264278d35ec75998992133da8fe8bc7bb8de5f7040137ba3353f1e7e0bacb6",
+      "block": 276658,
+      "costTpot": 0
+    },
+    {
+      "label": "buyer: pay request (refunded case)",
+      "layer": "evm",
+      "hash": "0xd511d2f40d3b05ae6e18bd61bf94c757c21d9e9a3eaad3dad0fffa6fc5984c86",
+      "block": 276659,
+      "costTpot": 7.704615
+    },
+    {
+      "label": "provider: refund the undeliverable request in Solidity + anchor in ink!, one Ethereum tx",
+      "layer": "evm -> substrate",
+      "hash": "0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314",
+      "block": 276660,
+      "costTpot": 0
+    },
+    {
+      "label": "buyer: confirm the served request in ink! (contracts.call from its EVM key)",
+      "layer": "evm -> substrate",
+      "hash": "0x91d0a18a7aee958852e8f1903981a5c526910976c899c86192ef2f7970cd3297",
+      "block": 276665,
+      "costTpot": 0
     }
   ],
   "sub": "5ETkpnDAeRU46becz38vSSP42vWoBnzZ2e4FFRbG6W3hVBdC",
@@ -107,11 +178,25 @@
     }
   ],
   "sampleReceipt": "deployments/receipts/served.json",
+  "registry": {
+    "address": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4",
+    "accountId": "0x3621669d774ff38e377992f276b1e320fd9836aad3581f688e4c7b8a1abf35d7",
+    "codeHash": "0x593244028383d5049023a64cdf67fb924e98f4120a609bc8580fc29593a0ecd8",
+    "selectors": {
+      "anchor": "0xc0564c5e",
+      "endpoint": "0x5e438b03",
+      "reputation": "0xfd7fcb15",
+      "info": "0x0190e5ac"
+    },
+    "instantiateTx": "0xef17ab339d696959449ed2e94bd066fb86de2a1945297d0d3d7dc35f97bd60e0",
+    "block": 276655
+  },
+  "readOrigin": "0x0118d896dc979963341e9449218e63e158cb6abaeeeeeeeeeeeeeeeeeeeeeeee",
   "network": {
     "name": "PortaldotV3 Testnet",
     "evmRpc": "https://test-evm-rpc-v3.portaldot.dev",
     "substrateWs": "wss://test-node-v3.portaldot.dev",
     "explorer": "https://scanner-testnet-v3.portaldot.dev"
   },
-  "publishedAt": "2026-11-01T11:11:40.023Z"
+  "publishedAt": "2026-11-01T11:16:37.135Z"
 }

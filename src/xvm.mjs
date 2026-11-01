@@ -48,6 +48,7 @@ export async function sendBatchFromEvmKey(api, wallet, calls) {
 /** Single runtime call (e.g. contracts.call or instantiate) from an EVM key. */
 export async function sendCallFromEvmKey(wallet, call) {
   // a SubmittableExtrinsic also has toHex() (the whole signed-extrinsic encoding): always send the Call
-  const data = call.method ? call.method.toHex() : call.toHex();
+  // (on a Call, .method is the method's name, a string)
+  const data = (typeof call.method === 'object' ? call.method : call).toHex();
   return sendTx(wallet, { to: RUNTIME_PALLETS_ADDRESS, data, value: 0n });
 }
