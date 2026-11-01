@@ -16,7 +16,7 @@ By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & M
 PortaldotV3 testnet from your browser (network, the native-asset ERC-20 precompile, contracts, endpoints, provider
 record, payments) and includes a free receipt verifier.
 
-**Demo video (2:41, voice-over and captions):** [watch in the browser](https://swiftbotlab.github.io/portal-meter/demo/portal-meter-demo.mp4).
+**Demo video (2:42, voice-over and captions):** [YouTube](https://youtu.be/9YKFQafSMRo).
 **Pitch deck:** [PDF](https://swiftbotlab.github.io/portal-meter/pitch/portal-meter-deck.pdf).
 
 > **Live on the PortaldotV3 testnet since 2026-11-01:** both contracts, a real paid request and a real refund, each
