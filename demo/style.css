@@ -96,3 +96,9 @@ button:disabled { opacity: 0.6; cursor: progress; }
   .kv { grid-template-columns: 1fr; gap: 0 0; }
   .kv dt { margin-top: 6px; }
 }
+
+.try-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+.try-row input { flex: 1 1 200px; min-width: 0; }
+.try-row input, .try-row select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+pre.body { background: var(--code); border-radius: 8px; padding: 10px 12px; max-height: 260px; overflow: auto; font-size: 0.82rem; margin: 8px 0; }
+.m.DONE, .m.PASS { color: var(--ok); }

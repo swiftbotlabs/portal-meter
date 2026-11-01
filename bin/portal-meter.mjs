@@ -6,12 +6,18 @@
 //   portal-meter buy <url> --keys <env file> [--key-var NAME] [--max 0.05] [--out <file>]
 //   portal-meter serve --keys <env file> [--key-var NAME] [--port 8402] [--host 127.0.0.1] [--mode xvm|evm]
 //
+// Sell an API, buy from one (deployments/sessions.json):
+//   portal-meter register --keys <env file> --key-var NAME --asset 7777 --price 0.01 --payee 0x.. --url https://..
+//   portal-meter session-open <endpoint id> --keys <env file> --budget 0.5 [--days 7] --out session.json
+//   portal-meter session-buy <url> --session session.json [--max 0.05]
+//   portal-meter session-close --session session.json
+//
 // Keys are read from a 0600 env file (default variables PORTALDOT_EVM_BUYER_KEY / PORTALDOT_EVM_PROVIDER_KEY)
 // and never printed. Network and contract addresses come from deployments/testnet.json.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Abi, ContractPromise } from '@polkadot/api-contract';
-import { Wallet, parseUnits } from 'ethers';
+import { Wallet, hexlify, parseUnits, randomBytes } from 'ethers';
 import { NETWORK, loadDeployment, PATHS } from '../src/config.mjs';
 import { makeProvider, settlement as settlementContract, readEndpoint } from '../src/evm.mjs';
 import { InkRegistry } from '../src/registry.mjs';
@@ -27,6 +33,13 @@ import { portaldotUpstream } from '../src/data.mjs';
 import { twinSs58 } from '../src/xvm.mjs';
 import { readKeyFile } from '../scripts/lib/sub.mjs';
 import { join } from 'node:path';
+import { precompileAddress } from '../src/config.mjs';
+import { erc20, sendTx, settlementIface } from '../src/evm.mjs';
+import { sessionContract, sessionIface } from '../src/session-chain.mjs';
+import { sessionIdFor } from '../src/session.mjs';
+import { SessionClient } from '../src/session-client.mjs';
+import { CALLS_SPEC_3002 as CALLS, batchAll, contractsCall, reviveCall } from '../src/runtime-calls.mjs';
+import { RUNTIME_PALLETS_ADDRESS } from '../src/session-settle.mjs';
 
 const [cmd, ...rest] = process.argv.slice(2);
 const flag = (name, def = null) => {
@@ -71,7 +84,8 @@ if (cmd === 'status') {
   console.log(`token        native asset #${dep.token.assetId} ${dep.token.symbol} at ${dep.token.precompile}`);
   for (let i = 1; i <= n; i++) {
     const ep = await readEndpoint(s, i);
-    const price = `${formatUnits(ep.price, dep.token.decimals)} ${dep.token.symbol}`;
+    const unit = ep.token.toLowerCase() === dep.token.precompile.toLowerCase() ? dep.token : { decimals: Number(await erc20(ep.token, evm).decimals()), symbol: await erc20(ep.token, evm).symbol() };
+    const price = `${formatUnits(ep.price, unit.decimals)} ${unit.symbol}`;
     if (!rawRegistry) {
       console.log(`endpoint ${i}   ${price} · provider ${ep.provider} · payee ${ep.payee}`);
       continue;
@@ -140,7 +154,75 @@ if (cmd === 'status') {
   const port = Number(flag('--port', '8402'));
   const host = flag('--host', '127.0.0.1');
   server.listen(port, host, () => console.error(`seller on http://${host}:${port} (settle mode ${mode}); catalog at /.well-known/portal-meter`));
+} else if (cmd === 'register') {
+  // one Ethereum transaction: the endpoint in Solidity and its URL in ink!, together or not at all
+  const wallet = keyWallet('PORTALDOT_EVM_PROVIDER_KEY');
+  const uri = flag('--url');
+  const assetId = Number(flag('--asset'));
+  const payee = flag('--payee', wallet.address);
+  if (!uri || !Number.isInteger(assetId)) die('usage: portal-meter register --keys f --asset <id> --price 0.01 --payee 0x.. --url https://..');
+  if (new TextEncoder().encode(uri).length > 63) die('--url must be at most 63 bytes');
+  const token = precompileAddress(assetId);
+  const decimals = Number(await erc20(token, evm).decimals());
+  const price = parseUnits(flag('--price', '0.01'), decimals);
+  const s = settlementContract(dep.settlement, evm);
+  const id = Number(await s.endpointCount()) + 1;
+  const le = new Uint8Array(4);
+  new DataView(le.buffer).setUint32(0, id, true);
+  const u = new TextEncoder().encode(uri);
+  const weight = { refTime: 8_000_000_000n, proofSize: 300_000n };
+  const r = await sendTx(wallet, {
+    to: RUNTIME_PALLETS_ADDRESS, value: 0n,
+    data: batchAll(CALLS, [
+      reviveCall(CALLS, { dest: dep.settlement, weight, depositLimit: 40n * 10n ** 14n, data: settlementIface.encodeFunctionData('registerEndpoint', [payee, token, price, 600]) }),
+      contractsCall(CALLS, { dest: dep.registry.accountId, weight, data: hexlify(new Uint8Array([0x82, 0x07, 0x9a, 0xd5, ...le, u.length << 2, ...u])) }),
+    ]),
+  });
+  console.log(`endpoint ${id}: ${flag('--price', '0.01')} per request, tx ${r.hash}, block ${r.blockNumber}`);
+} else if (cmd === 'session-open') {
+  const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
+  const endpointId = Number(positional[0]);
+  const out = flag('--out');
+  if (!Number.isInteger(endpointId) || !out) die('usage: portal-meter session-open <endpoint id> --keys f --budget 0.5 [--days 7] --out session.json');
+  const wallet = keyWallet('PORTALDOT_EVM_BUYER_KEY');
+  const ep = await readEndpoint(settlementContract(dep.settlement, evm), endpointId);
+  const token = erc20(ep.token, wallet);
+  const decimals = Number(await token.decimals());
+  const budget = parseUnits(flag('--budget', '0.5'), decimals);
+  const key = Wallet.createRandom(); // the session key can only spend this budget
+  const nonce = hexlify(randomBytes(32));
+  const allowance = BigInt(await token.allowance(wallet.address, ses.sessionContract));
+  if (allowance < budget) await sendTx(wallet, { to: ep.token, data: token.interface.encodeFunctionData('approve', [ses.sessionContract, budget]) });
+  const latest = await evm.getBlock('latest');
+  const expiresAt = latest.timestamp + Number(flag('--days', '7')) * 86_400;
+  const r = await sendTx(wallet, { to: ses.sessionContract, data: sessionIface.encodeFunctionData('open', [endpointId, nonce, key.address, budget, expiresAt]) });
+  const session = sessionIdFor(NETWORK.chainId, ses.sessionContract, wallet.address, endpointId, nonce).toLowerCase();
+  writeFileSync(out, JSON.stringify({ session, endpointId, provider: ep.provider, token: ep.token, sessionKey: key.privateKey, state: null }, null, 2) + '\n', { mode: 0o600 });
+  console.log(`session ${session}: budget ${flag('--budget', '0.5')}, tx ${r.hash}, block ${r.blockNumber}, state in ${out}`);
+} else if (cmd === 'session-buy') {
+  const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
+  const file = flag('--session');
+  if (!positional[0] || !file) die('usage: portal-meter session-buy <url> --session session.json [--max 0.05]');
+  const j = JSON.parse(readFileSync(file, 'utf8'));
+  const decimals = Number(await erc20(j.token, evm).decimals());
+  const client = new SessionClient({
+    signer: new Wallet(j.sessionKey), session: j.session, state: j.state || undefined, maxPrice: parseUnits(flag('--max', '0.05'), decimals),
+    expect: { chainId: NETWORK.chainId, sessionContract: ses.sessionContract, provider: j.provider, token: j.token },
+  });
+  const r = await client.get(positional[0]);
+  writeFileSync(file, JSON.stringify({ ...j, state: client.state }, null, 2) + '\n', { mode: 0o600 });
+  console.error(`· HTTP ${r.status}${r.receipt ? `, request ${r.receipt.count}, spent ${r.receipt.cumulative}, head ${r.receipt.head}` : ', not charged'}`);
+  process.stdout.write(r.body);
+  if (r.status !== 200) process.exit(1);
+} else if (cmd === 'session-close') {
+  const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
+  const file = flag('--session');
+  if (!file) die('usage: portal-meter session-close --session session.json --keys f');
+  const wallet = keyWallet('PORTALDOT_EVM_BUYER_KEY');
+  const j = JSON.parse(readFileSync(file, 'utf8'));
+  const r = await sendTx(wallet, { to: ses.sessionContract, data: sessionContract(ses.sessionContract, wallet).interface.encodeFunctionData('close', [j.session]) });
+  console.log(`closed: tx ${r.hash}, block ${r.blockNumber}`);
 } else {
-  die('usage: portal-meter status | verify <receipt> [--body f] | buy <url> --keys f | serve --keys f');
+  die('usage: portal-meter status | verify <receipt> [--body f] | buy <url> --keys f | serve --keys f | register | session-open | session-buy | session-close');
 }
 if (cmd !== 'serve') process.exit(0);

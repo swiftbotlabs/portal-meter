@@ -9,7 +9,7 @@ import { sendRaw } from './rawtx.mjs';
 export const RUNTIME_PALLETS_ADDRESS = '0x6d6f646c70792f70616464720000000000000000';
 const REVIVE_WEIGHT = { refTime: 6_000_000_000n, proofSize: 200_000n };
 const INK_WEIGHT = { refTime: 6_000_000_000n, proofSize: 200_000n };
-const REVIVE_DEPOSIT_LIMIT = 10n ** 14n; // 1 tPOT: a redeem writes no new storage
+const REVIVE_DEPOSIT_LIMIT = 5n * 10n ** 14n; // 5 tPOT: the first redeem of a session writes one slot (3.84 tPOT), later ones none
 
 /** Sessions with signed vouchers not redeemed yet, oldest activity first. */
 export function pendingSessions(states) {

@@ -1,0 +1,89 @@
+{
+  "chainId": 420420777,
+  "sessionContract": "0xeA6bf3B925B9CA1435e19D2369B0c38D795887c4",
+  "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
+  "registry": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4",
+  "registryAccountId": "0x3621669d774ff38e377992f276b1e320fd9836aad3581f688e4c7b8a1abf35d7",
+  "endpoint": {
+    "id": 3,
+    "uri": "https://portal-meter.swiftbotlab.workers.dev/v1/",
+    "price": "10000",
+    "provider": "0xE13A4d566A1f6492C1511EF100DC0417ccE18E59",
+    "payee": "0x77df5A7c0375bE0A492C109CcaFB96551fa8Ca5C",
+    "token": "0x00001e6100000000000000000000000000010000"
+  },
+  "token": {
+    "assetId": 7777,
+    "symbol": "pUSD",
+    "decimals": 6,
+    "precompile": "0x00001e6100000000000000000000000000010000"
+  },
+  "hostedSeller": "https://portal-meter.swiftbotlab.workers.dev",
+  "demoSession": {
+    "id": "0x7ecc66dba7c73dcceb5cc766f8b5432e47c8665ed5faee217687e977c408151c",
+    "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
+    "signer": "0xb304d3B1928E359d4a495248fB0fE3478207EDC8",
+    "nonce": "0x8410d5ffb76054bafe5a838cd6849f506f42b325d626856d01b35e6983c9e0bc",
+    "budget": "2500000",
+    "expiresAt": 1795293408,
+    "seed": "portal-meter/public-demo-session-key/1",
+    "openCostTpot": "7.71111646176640242"
+  },
+  "calls": {
+    "specVersion": 3002,
+    "utilityBatchAll": [
+      1,
+      2
+    ],
+    "reviveCall": [
+      80,
+      1
+    ],
+    "contractsCall": [
+      21,
+      6
+    ]
+  },
+  "transactions": [
+    {
+      "label": "fund the deployer, hosted provider and buyer keys",
+      "layer": "substrate",
+      "hash": "0x0b6467a61039e9b6eaf3733422282ac1ac232e0f6579e1ed6e459e69c11674a7",
+      "block": 282171
+    },
+    {
+      "label": "swap 5 tPOT to pUSD on the native exchange, sent to the buyer",
+      "layer": "substrate",
+      "hash": "0xead935c032a071ce4b4f203bc6af9ea664c4740c19cd3d4263835e024fa11ff4",
+      "block": 282172
+    },
+    {
+      "label": "deploy MeterSession",
+      "layer": "evm",
+      "hash": "0x8afb7c6c5fe04d5d0e5cf50caf05322ae0d3886fcc2f96cf3c5b078282206e74",
+      "block": 282230,
+      "address": "0xeA6bf3B925B9CA1435e19D2369B0c38D795887c4",
+      "costTpot": "304.37591174301665403"
+    },
+    {
+      "label": "hosted provider: register the public data API in Solidity + list its URL in ink!, one Ethereum tx",
+      "layer": "evm -> substrate",
+      "hash": "0xeca4784ca0ba03ce7f110cbdc9af984dc2956f8d881edb5577261fcd7fd27b2c",
+      "block": 282234
+    },
+    {
+      "label": "buyer: approve MeterSession on the pUSD precompile",
+      "layer": "evm",
+      "hash": "0x881b69dd465eebd9caba998402a76c358ffa77d304f7c3098eb508e65fff6562",
+      "block": 282235
+    },
+    {
+      "label": "buyer: open the public demo session",
+      "layer": "evm",
+      "hash": "0x0fe3fe55d3dff4acdaebd095f870a25a237789cd2f548ac47abd6f80fe8376e5",
+      "block": 282236,
+      "costTpot": "7.71111646176640242"
+    }
+  ],
+  "publishedAt": "2026-11-01T20:36:54.802Z"
+}

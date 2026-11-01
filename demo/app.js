@@ -4,6 +4,7 @@ import { settlement as settlementContract, readEndpoint, settlementIface } from 
 import { RawInkRegistry } from '../src/inkraw.mjs';
 import { verifyReceipt } from '../src/verify.mjs';
 import { parseB64json, formatUnits } from '../src/protocol.mjs';
+import { setupTry } from './try.js';
 
 const NET = {
   evmRpc: 'https://test-evm-rpc-v3.portaldot.dev',
@@ -105,7 +106,7 @@ async function refreshAsset(token) {
 }
 
 // ------------------------------------------------------------------ contracts, endpoints, activity
-async function refreshContracts(d, md) {
+async function refreshContracts(d, md, sessions) {
   const s = settlementContract(d.settlement, evm);
   const reg = d.registry
     ? new RawInkRegistry({ rpc: NET.subRpc, accountId: d.registry.accountId, origin: d.readOrigin, selectors: d.registry.selectors })
@@ -128,7 +129,8 @@ async function refreshContracts(d, md) {
       ? await Promise.all([reg.endpoint(ep.provider, i).catch(() => null), reg.reputation(ep.provider, i).catch(() => null)])
       : [null, null];
     const known = (d.endpoints || []).find(x => x.id === i);
-    rows.push(`<tr><td>${i}</td><td class="mono">${esc(rec ? rec.uri : known ? known.path : '(third-party endpoint)')}</td><td>${formatUnits(ep.price, md.decimals)} ${esc(md.symbol)}</td>
+    const unit = sessions && ep.token.toLowerCase() === sessions.token.precompile.toLowerCase() ? sessions.token : md;
+    rows.push(`<tr><td>${i}</td><td class="mono">${esc(rec ? rec.uri : known ? known.path : '(third-party endpoint)')}</td><td>${formatUnits(ep.price, unit.decimals)} ${esc(unit.symbol)}</td>
       <td class="mono">${esc(short(ep.provider))}</td><td>${rep ? rep.served : '-'}</td><td>${rep ? rep.refunded : '-'}</td>
       <td>${rep ? rep.confirmed : '-'}</td><td>${rep ? rep.disputed : '-'}</td><td>${rep ? (rep.scoreBps / 100).toFixed(1) + ' %' : '-'}</td></tr>`);
   }
@@ -234,9 +236,19 @@ async function main() {
       deposit is larger than the current testnet funds. Until then the provider columns and the anchor check stay empty.</p>`;
   }
   renderTxs(d);
+  let sessions = null;
+  try {
+    const r = await fetch('../deployments/sessions.json', { cache: 'no-store' });
+    if (r.ok) sessions = await r.json();
+  } catch { /* sessions not deployed */ }
+  if (sessions) {
+    sessions.readOrigin = d.readOrigin;
+    sessions.selectors = d.registry.selectors;
+    setupTry(sessions, NET);
+  }
   let reg = null;
   try {
-    reg = await refreshContracts(d, md);
+    reg = await refreshContracts(d, md, sessions);
   } catch (e) {
     kv($('contracts-kv'), [['error', esc(e.message)]]);
   }

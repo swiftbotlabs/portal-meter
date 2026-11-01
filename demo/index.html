@@ -40,6 +40,28 @@
         <div class="step"><b>4</b> served once + receipt</div>
         <div class="step"><b>5</b> <code>settle</code> + ink! <code>record</code>, one tx</div>
       </div>
+      <p class="muted" style="margin-top:10px">That is the escrow path, for calls worth a few cents or more. High-frequency APIs use a
+        prepaid session: one budget, a signed voucher per request, many requests settled in one transaction.</p>
+    </section>
+
+    <section class="card" id="try" hidden>
+      <h2>Buy a real API call from this page</h2>
+      <p class="muted">No wallet, no install. A public test key in this page signs a voucher against a capped prepaid session, the
+        hosted seller checks it and answers. Nothing goes on-chain per request: the seller settles many requests in one
+        transaction, in Solidity and ink! together, and every batch carries the payer's signature over what was delivered.
+        Test tokens only.</p>
+      <div class="row try-row">
+        <select id="try-kind" aria-label="endpoint"><option value="asset">/v1/asset/</option><option value="account">/v1/account/</option></select>
+        <input id="try-arg" value="7777" maxlength="64" spellcheck="false" aria-label="asset id or address">
+        <button id="try-btn" type="button">Buy one request</button>
+      </div>
+      <ul class="checks" id="try-steps" aria-live="polite"></ul>
+      <pre id="try-body" class="body" hidden></pre>
+      <div class="totals" id="try-stats"></div>
+      <div class="table-scroll"><table id="try-batches"><thead><tr><th>block</th><th>requests settled</th><th>sessions</th><th>one Ethereum tx</th></tr></thead>
+        <tbody><tr><td colspan="4" class="muted">no batch yet</td></tr></tbody></table></div>
+      <div class="row"><button id="try-verify" type="button" class="ghost">Replay the session log against the chain</button></div>
+      <div id="try-verdict" aria-live="polite"></div>
     </section>
 
     <section class="card" id="video">
