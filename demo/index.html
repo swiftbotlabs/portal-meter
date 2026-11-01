@@ -104,7 +104,8 @@
     <section class="card">
       <h2>Endpoints and provider record</h2>
       <p class="muted">Price and payee come from <code>MeterSettlement</code> (EVM). The URL and the served / refunded /
-        confirmed / disputed counts come from <code>MeterRegistry</code> (ink!), keyed by the provider's EVM address.</p>
+        confirmed / disputed counts come from <code>MeterRegistry</code> (ink!), keyed by the provider's EVM address. On a session
+        endpoint, one "served" is one anchored batch of many requests.</p>
       <div class="table-scroll"><table id="endpoints"><thead><tr>
         <th>#</th><th>endpoint</th><th>price</th><th>provider</th><th>served</th><th>refunded</th><th>confirmed</th><th>disputed</th><th>score</th>
       </tr></thead><tbody><tr><td colspan="9" class="muted">no endpoints yet</td></tr></tbody></table></div>

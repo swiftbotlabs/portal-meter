@@ -27,7 +27,8 @@
     "budget": "2500000",
     "expiresAt": 1795294512,
     "seed": "portal-meter/public-demo-session-key/1",
-    "openCostTpot": "11.55261774057007508"
+    "openCostTpot": "11.55261774057007508",
+    "openBlock": 282419
   },
   "calls": {
     "specVersion": 3002,

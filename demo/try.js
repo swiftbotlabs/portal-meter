@@ -118,7 +118,7 @@ export async function setupTry(s, net) {
         from = rows[rows.length - 1].n + 1;
       }
       const topic = eventTopic('Redeemed(bytes32,uint32,bytes32,uint96,uint96,uint32)');
-      const logs = await evm.getLogs({ address: s.sessionContract, topics: [topic, demo.id], fromBlock: s.transactions.at(-1).block, toBlock: 'latest' });
+      const logs = await evm.getLogs({ address: s.sessionContract, topics: [topic, demo.id], fromBlock: demo.openBlock, toBlock: 'latest' });
       const redemptions = logs.map(l => sessionIface.parseLog(l)).map(p => ({ head: p.args.head, count: Number(p.args.count), cumulative: p.args.cumulative }));
       const v = verifyLog(demo.id, rows, redemptions);
       const reg = new RawInkRegistry({ rpc: net.subRpc, accountId: s.registryAccountId, origin: s.readOrigin, selectors: s.selectors });

@@ -209,6 +209,9 @@ if (cmd === 'status') {
     signer: new Wallet(j.sessionKey), session: j.session, state: j.state || undefined, maxPrice: parseUnits(flag('--max', '0.05'), decimals),
     expect: { chainId: NETWORK.chainId, sessionContract: ses.sessionContract, provider: j.provider, token: j.token },
   });
+  // if an earlier run died between sending a voucher and saving the answer, the seller is one step ahead
+  const view = await fetch(new URL(`/v1/session/${j.session}`, positional[0])).then(x => (x.ok ? x.json() : null)).catch(() => null);
+  if (view && client.resume(view)) console.error('· picked up one step ahead: that response was lost');
   const r = await client.get(positional[0]);
   writeFileSync(file, JSON.stringify({ ...j, state: client.state }, null, 2) + '\n', { mode: 0o600 });
   console.error(`· HTTP ${r.status}${r.receipt ? `, request ${r.receipt.count}, spent ${r.receipt.cumulative}, head ${r.receipt.head}` : ', not charged'}`);

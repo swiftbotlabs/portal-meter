@@ -160,7 +160,7 @@ try {
     const r = await sendTx(buyer, { to: state.sessionContract, data: sessionIface.encodeFunctionData('open', [state.endpoint.id, nonce, demoKey.address, DEMO_BUDGET, expiresAt]) });
     state.demoSession = {
       id: sessionIdFor(NETWORK.chainId, state.sessionContract, buyer.address, state.endpoint.id, nonce).toLowerCase(),
-      payer: buyer.address, signer: demoKey.address, nonce, budget: DEMO_BUDGET.toString(), expiresAt, seed: DEMO_KEY_SEED,
+      payer: buyer.address, signer: demoKey.address, nonce, budget: DEMO_BUDGET.toString(), expiresAt, seed: DEMO_KEY_SEED, openBlock: r.blockNumber,
       openCostTpot: formatEther(before - (await evm.getBalance(buyer.address))),
     };
     note('buyer: open the public demo session', 'evm', r.hash, r.blockNumber, { costTpot: state.demoSession.openCostTpot });
