@@ -296,7 +296,7 @@ mod meter_registry {
                 Some(r) => {
                     let total = u128::from(r.served).saturating_add(u128::from(r.refunded));
                     let good = u128::from(r.served.saturating_sub(r.disputed));
-                    let score = if total == 0 { 0 } else { good.saturating_mul(10_000) / total };
+                    let score = good.saturating_mul(10_000).checked_div(total).unwrap_or(0);
                     Reputation {
                         served: r.served,
                         refunded: r.refunded,

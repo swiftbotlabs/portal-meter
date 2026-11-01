@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="1200" height="640" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#141a2b"/>
+    </marker>
+    <marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#e6007a"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="640" fill="#ffffff"/>
+
+  <!-- off-chain -->
+  <rect x="30" y="40" width="250" height="120" rx="14" fill="#f6f7fb" stroke="#c9cfdc"/>
+  <text x="155" y="78" text-anchor="middle" font-size="22" font-weight="700" fill="#141a2b">Buyer</text>
+  <text x="155" y="106" text-anchor="middle" font-size="15" fill="#5b6478">app, bot or agent · EVM key</text>
+  <text x="155" y="130" text-anchor="middle" font-size="15" fill="#5b6478">src/buyer.mjs</text>
+
+  <rect x="920" y="40" width="250" height="120" rx="14" fill="#f6f7fb" stroke="#c9cfdc"/>
+  <text x="1045" y="78" text-anchor="middle" font-size="22" font-weight="700" fill="#141a2b">Seller (HTTP 402)</text>
+  <text x="1045" y="106" text-anchor="middle" font-size="15" fill="#5b6478">provider · EVM key</text>
+  <text x="1045" y="130" text-anchor="middle" font-size="15" fill="#5b6478">src/seller.mjs + paid data</text>
+
+  <!-- HTTP arrows -->
+  <line x1="285" y1="75" x2="912" y2="75" stroke="#141a2b" stroke-width="2" marker-end="url(#a)"/>
+  <text x="600" y="66" text-anchor="middle" font-size="15" fill="#141a2b">1 GET → 402 quote · 3 retry with payer-signed proof</text>
+  <line x1="915" y1="125" x2="288" y2="125" stroke="#141a2b" stroke-width="2" marker-end="url(#a)"/>
+  <text x="600" y="146" text-anchor="middle" font-size="15" fill="#141a2b">5 body + provider-signed receipt (served once)</text>
+
+  <!-- chain -->
+  <rect x="30" y="200" width="1140" height="330" rx="18" fill="#fdf0f7" stroke="#e6007a" stroke-width="2"/>
+  <text x="1150" y="232" text-anchor="end" font-size="18" font-weight="700" fill="#e6007a">Portaldot V3 testnet (one runtime, two contract VMs)</text>
+
+  <rect x="60" y="255" width="470" height="245" rx="14" fill="#ffffff" stroke="#c9cfdc"/>
+  <text x="80" y="285" font-size="17" font-weight="700" fill="#5b6478">pallet-revive (EVM)</text>
+  <rect x="80" y="300" width="430" height="95" rx="10" fill="#f6f7fb" stroke="#c9cfdc"/>
+  <text x="295" y="333" text-anchor="middle" font-size="20" font-weight="700" fill="#141a2b">MeterSettlement.sol</text>
+  <text x="295" y="360" text-anchor="middle" font-size="15" fill="#5b6478">endpoints · escrow per request · settle once</text>
+  <text x="295" y="382" text-anchor="middle" font-size="15" fill="#5b6478">refund (provider, or payer after delay)</text>
+  <rect x="80" y="410" width="430" height="72" rx="10" fill="#f6f7fb" stroke="#c9cfdc"/>
+  <text x="295" y="440" text-anchor="middle" font-size="18" font-weight="700" fill="#141a2b">tUSDm: native asset as ERC-20</text>
+  <text x="295" y="465" text-anchor="middle" font-size="15" fill="#5b6478">pallet-assets precompile 0x{id}…00010000</text>
+
+  <rect x="670" y="255" width="470" height="245" rx="14" fill="#ffffff" stroke="#c9cfdc"/>
+  <text x="690" y="285" font-size="17" font-weight="700" fill="#5b6478">pallet-contracts (WASM)</text>
+  <rect x="690" y="300" width="430" height="182" rx="10" fill="#f6f7fb" stroke="#c9cfdc"/>
+  <text x="905" y="335" text-anchor="middle" font-size="20" font-weight="700" fill="#141a2b">MeterRegistry (ink! 5)</text>
+  <text x="905" y="364" text-anchor="middle" font-size="15" fill="#5b6478">endpoint URLs · outcome anchors</text>
+  <text x="905" y="388" text-anchor="middle" font-size="15" fill="#5b6478">served / refunded / confirmed / disputed</text>
+  <text x="905" y="412" text-anchor="middle" font-size="15" fill="#5b6478">keyed by the caller's EVM address</text>
+  <text x="905" y="436" text-anchor="middle" font-size="15" fill="#5b6478">rate(): recomputes the Solidity request id,</text>
+  <text x="905" y="458" text-anchor="middle" font-size="15" fill="#5b6478">so only the real payer can rate</text>
+
+  <rect x="545" y="375" width="110" height="64" rx="10" fill="#e6007a"/>
+  <text x="600" y="400" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">runtime pallets</text>
+  <text x="600" y="420" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">address</text>
+  <line x1="545" y1="395" x2="515" y2="365" stroke="#e6007a" stroke-width="2.5" marker-end="url(#p)"/>
+  <line x1="655" y1="395" x2="685" y2="365" stroke="#e6007a" stroke-width="2.5" marker-end="url(#p)"/>
+
+  <!-- buyer pays -->
+  <line x1="155" y1="165" x2="155" y2="295" stroke="#141a2b" stroke-width="2" marker-end="url(#a)"/>
+  <text x="165" y="186" font-size="15" fill="#141a2b">2 approve + pay()</text>
+  <!-- seller tx -->
+  <path d="M1045 165 L1045 188 L600 188 L600 368" fill="none" stroke="#e6007a" stroke-width="2.5" marker-end="url(#p)"/>
+  <text x="822" y="181" text-anchor="middle" font-size="14" font-weight="700" fill="#e6007a">4 one Ethereum tx: batchAll(settle | refund, ink! record)</text>
+
+  <!-- verifier -->
+  <rect x="330" y="555" width="540" height="64" rx="12" fill="#f6f7fb" stroke="#c9cfdc"/>
+  <text x="600" y="585" text-anchor="middle" font-size="18" font-weight="700" fill="#141a2b">Verifier: ACCEPT / REJECT with every check</text>
+  <text x="600" y="607" text-anchor="middle" font-size="14" fill="#5b6478">receipt signature · payment state · events · ink! anchor · body hash (CLI + live page)</text>
+  <line x1="450" y1="552" x2="300" y2="505" stroke="#5b6478" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <line x1="750" y1="552" x2="900" y2="505" stroke="#5b6478" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a)"/>
+</svg>
