@@ -20,6 +20,7 @@ const h = readKeyFile(opt('--hosted'));
 const N_A = Number(opt('--a', '100'));
 const N_B = Number(opt('--b', '20'));
 const PAUSE_MS = 2200; // the seller allows 30 paid requests a minute per address
+const LIFE_SEC = 3300; // short on purpose: the payer closes these sessions afterwards, once expiry and the grace period have passed
 
 const s = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
 const evm = makeProvider(NETWORK.evmRpc, NETWORK.chainId);
@@ -30,6 +31,7 @@ const price = BigInt(s.endpoint.price);
 const base = s.hostedSeller;
 const tpot = async a => evm.getBalance(a);
 const delta = (x, y) => Number(formatEther(y - x));
+const FILE = join(PATHS.root, 'deployments', 'proof', 'session-measure.json');
 const out = { startedAt: new Date().toISOString(), price: price.toString(), steps: [] };
 const log = (step, o) => {
   out.steps.push({ step, ...o });
@@ -41,10 +43,11 @@ async function open(n) {
   const nonce = hexlify(randomBytes(32));
   const latest = await evm.getBlock('latest');
   const before = await tpot(buyer.address);
-  const budget = (BigInt(n) + 1n) * price;
-  const r = await sendTx(buyer, { to: s.sessionContract, data: sessionIface.encodeFunctionData('open', [s.endpoint.id, nonce, key.address, budget, latest.timestamp + 86_400]) });
+  const budget = [(BigInt(n) + 1n) * price, 250_000n].reduce((a, b) => (a > b ? a : b)); // the seller's minimum budget
+  const expiresAt = latest.timestamp + LIFE_SEC;
+  const r = await sendTx(buyer, { to: s.sessionContract, data: sessionIface.encodeFunctionData('open', [s.endpoint.id, nonce, key.address, budget, expiresAt]) });
   const id = sessionIdFor(NETWORK.chainId, s.sessionContract, buyer.address, s.endpoint.id, nonce).toLowerCase();
-  log('open', { session: id, requests: n, budget: budget.toString(), tx: r.hash, block: r.blockNumber, buyerTpot: delta(before, await tpot(buyer.address)) });
+  log('open', { session: id, requests: n, budget: budget.toString(), expiresAt, tx: r.hash, block: r.blockNumber, buyerTpot: delta(before, await tpot(buyer.address)) });
   return { id, key, n };
 }
 
@@ -60,6 +63,22 @@ async function run(sess) {
     await new Promise(res => setTimeout(res, r.status === 429 ? 30_000 : PAUSE_MS));
   }
   log('requests', { session: sess.id, requests: done, seconds: Math.round((Date.now() - t0) / 1000), onChainTransactions: 0 });
+}
+
+if (args.includes('--close')) {
+  // run once the sessions have expired and the grace period has passed: the payer takes back the rest and its deposits
+  const m = JSON.parse(readFileSync(FILE, 'utf8'));
+  const asBuyer = sessionContract(s.sessionContract, buyer);
+  const before = await tpot(buyer.address);
+  const usdBefore = await pusd.balanceOf(buyer.address);
+  for (const id of m.toClose) {
+    const r = await sendTx(buyer, { to: s.sessionContract, data: asBuyer.interface.encodeFunctionData('close', [id]) });
+    m.steps.push({ step: 'close', session: id, tx: r.hash, block: r.blockNumber });
+  }
+  m.steps.push({ step: 'closed', buyerTpot: delta(before, await tpot(buyer.address)), pusdReturned: (await pusd.balanceOf(buyer.address) - usdBefore).toString() });
+  writeFileSync(FILE, JSON.stringify(m, null, 2) + '\n');
+  console.log(JSON.stringify(m.steps.at(-1)));
+  process.exit(0);
 }
 
 const payeeBefore = await pusd.balanceOf(s.endpoint.payee);
@@ -83,13 +102,8 @@ for (const x of sessions) {
 }
 log('payee', { pusdReceived: (await pusd.balanceOf(s.endpoint.payee) - payeeBefore).toString() });
 
-const asProvider = sessionContract(s.sessionContract, provider);
-const beforeClose = await tpot(provider.address);
-for (const x of sessions) {
-  const r = await sendTx(provider, { to: s.sessionContract, data: asProvider.interface.encodeFunctionData('close', [x.id]) });
-  log('close', { session: x.id, tx: r.hash, block: r.blockNumber });
-}
-log('closed', { providerTpot: delta(beforeClose, await tpot(provider.address)) });
+out.toClose = sessions.map(x => x.id);
+out.closableAt = (await evm.getBlock('latest')).timestamp + LIFE_SEC + 900;
 out.finishedAt = new Date().toISOString();
-writeFileSync(join(PATHS.root, 'deployments', 'proof', 'session-measure.json'), JSON.stringify(out, null, 2) + '\n');
+writeFileSync(FILE, JSON.stringify(out, null, 2) + '\n');
 console.log('written');

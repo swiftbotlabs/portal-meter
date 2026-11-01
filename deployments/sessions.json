@@ -1,6 +1,6 @@
 {
   "chainId": 420420777,
-  "sessionContract": "0xeA6bf3B925B9CA1435e19D2369B0c38D795887c4",
+  "sessionContract": "0xCc2aBc8AC1B5676e8f9678bb5B6881A0b743B3d5",
   "settlement": "0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e",
   "registry": "5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4",
   "registryAccountId": "0x3621669d774ff38e377992f276b1e320fd9836aad3581f688e4c7b8a1abf35d7",
@@ -20,14 +20,14 @@
   },
   "hostedSeller": "https://portal-meter.swiftbotlab.workers.dev",
   "demoSession": {
-    "id": "0x7ecc66dba7c73dcceb5cc766f8b5432e47c8665ed5faee217687e977c408151c",
+    "id": "0x3dfa2eac385c9f3abba3d36d21ab873616dd23b04050bc7704aa57ea08395039",
     "payer": "0x0118d896dC979963341e9449218e63E158CB6AbA",
     "signer": "0xb304d3B1928E359d4a495248fB0fE3478207EDC8",
-    "nonce": "0x8410d5ffb76054bafe5a838cd6849f506f42b325d626856d01b35e6983c9e0bc",
+    "nonce": "0xa7eaaf17ccb0a54575d4f40c252ba012e85b267001d70da6f784174580c4fbea",
     "budget": "2500000",
-    "expiresAt": 1795293408,
+    "expiresAt": 1795294512,
     "seed": "portal-meter/public-demo-session-key/1",
-    "openCostTpot": "7.71111646176640242"
+    "openCostTpot": "11.55261774057007508"
   },
   "calls": {
     "specVersion": 3002,
@@ -58,7 +58,7 @@
       "block": 282172
     },
     {
-      "label": "deploy MeterSession",
+      "label": "first deployment, replaced after review: deploy MeterSession",
       "layer": "evm",
       "hash": "0x8afb7c6c5fe04d5d0e5cf50caf05322ae0d3886fcc2f96cf3c5b078282206e74",
       "block": 282230,
@@ -72,18 +72,45 @@
       "block": 282234
     },
     {
-      "label": "buyer: approve MeterSession on the pUSD precompile",
+      "label": "first deployment, replaced after review: buyer: approve MeterSession on the pUSD precompile",
       "layer": "evm",
       "hash": "0x881b69dd465eebd9caba998402a76c358ffa77d304f7c3098eb508e65fff6562",
       "block": 282235
     },
     {
-      "label": "buyer: open the public demo session",
+      "label": "first deployment, replaced after review: buyer: open the public demo session",
       "layer": "evm",
       "hash": "0x0fe3fe55d3dff4acdaebd095f870a25a237789cd2f548ac47abd6f80fe8376e5",
       "block": 282236,
       "costTpot": "7.71111646176640242"
+    },
+    {
+      "label": "swap 5 tPOT to pUSD on the native exchange, sent to the buyer",
+      "layer": "substrate",
+      "hash": "0x63dc82df9af5528697ce577e37e52eea0891c6450e53cb44839e8be5939154dd",
+      "block": 282416
+    },
+    {
+      "label": "deploy MeterSession",
+      "layer": "evm",
+      "hash": "0xfa1c962f3796bdbb7e93d32110cc4d13ffac4dbe2e7c292280c98d075cbb6d2d",
+      "block": 282417,
+      "address": "0xCc2aBc8AC1B5676e8f9678bb5B6881A0b743B3d5",
+      "costTpot": "314.2165117555215238"
+    },
+    {
+      "label": "buyer: approve MeterSession on the pUSD precompile",
+      "layer": "evm",
+      "hash": "0x87c994e77a581ac7e8c448d6dfe440a210a7b917151238358b3bad7a6dad493e",
+      "block": 282418
+    },
+    {
+      "label": "buyer: open the public demo session",
+      "layer": "evm",
+      "hash": "0x083042840d18dc07bf182cc0160181ed918246f38b69cd9687835783bd488572",
+      "block": 282419,
+      "costTpot": "11.55261774057007508"
     }
   ],
-  "publishedAt": "2026-11-01T20:36:54.802Z"
+  "publishedAt": "2026-11-01T20:55:18.991Z"
 }

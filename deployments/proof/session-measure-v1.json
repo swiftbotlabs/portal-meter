@@ -1,0 +1,80 @@
+{
+  "startedAt": "2026-11-01T20:40:05.247Z",
+  "price": "10000",
+  "steps": [
+    {
+      "step": "open",
+      "session": "0xe82d71b0530af49c59657367ebf75d98610c6c1892297f9b734a23cd2ba73045",
+      "requests": 100,
+      "budget": "1010000",
+      "tx": "0x22ff1d09ae4957622ae7f65d9505f68b91fc0df5f223ace85a06a4440c17d26d",
+      "block": 282269,
+      "buyerTpot": -7.711116460499106
+    },
+    {
+      "step": "open",
+      "session": "0x366ce1abaeab960dbd006333a461974eaf303e6665f55f9aa6319244c6bb4e6d",
+      "requests": 20,
+      "budget": "210000",
+      "tx": "0x0a121b9cc8424b848c73f882d6dd3ef6b9b798d31883b925c93814a5f75cb0cf",
+      "block": 282270,
+      "buyerTpot": -7.711116460460918
+    },
+    {
+      "step": "requests",
+      "session": "0xe82d71b0530af49c59657367ebf75d98610c6c1892297f9b734a23cd2ba73045",
+      "requests": 100,
+      "seconds": 319,
+      "onChainTransactions": 0
+    },
+    {
+      "step": "requests",
+      "session": "0x366ce1abaeab960dbd006333a461974eaf303e6665f55f9aa6319244c6bb4e6d",
+      "requests": 20,
+      "seconds": 61,
+      "onChainTransactions": 0
+    },
+    {
+      "step": "settle",
+      "tx": "0x23ac6f5c622df59873729a8caafbab5d0ee6e871f68c1e97a22e4e69d14d8486",
+      "block": 282334,
+      "requests": 121,
+      "providerTpot": -18.72696430279586
+    },
+    {
+      "step": "verify",
+      "session": "0xe82d71b0530af49c59657367ebf75d98610c6c1892297f9b734a23cd2ba73045",
+      "rows": 100,
+      "redemptions": 1,
+      "ok": true
+    },
+    {
+      "step": "verify",
+      "session": "0x366ce1abaeab960dbd006333a461974eaf303e6665f55f9aa6319244c6bb4e6d",
+      "rows": 20,
+      "redemptions": 1,
+      "ok": true
+    },
+    {
+      "step": "payee",
+      "pusdReceived": "1210000"
+    },
+    {
+      "step": "close",
+      "session": "0xe82d71b0530af49c59657367ebf75d98610c6c1892297f9b734a23cd2ba73045",
+      "tx": "0x749f86b47906d600ebfb6fe831f790738cac6e198a18291198ce898f1b4ceb0c",
+      "block": 282335
+    },
+    {
+      "step": "close",
+      "session": "0x366ce1abaeab960dbd006333a461974eaf303e6665f55f9aa6319244c6bb4e6d",
+      "tx": "0x4ef43969e1f6f6658d24f5100361eb934e7ec2ac068a4aa2f6f3d9f37e4822fe",
+      "block": 282336
+    },
+    {
+      "step": "closed",
+      "providerTpot": 15.33616746295445
+    }
+  ],
+  "finishedAt": "2026-11-01T20:46:54.569Z"
+}
