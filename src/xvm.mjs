@@ -23,7 +23,8 @@ export async function buildReviveCall(api, fromH160, dest, data, value = 0n) {
     const j = dry.toJSON();
     const res = j.result || {};
     if (res.err) throw new Error(`revive dry-run reverted: ${JSON.stringify(res.err)}`);
-    if (res.ok && (BigInt(res.ok.flags ?? 0) & 1n) === 1n) throw new Error(`Solidity call reverts (data ${res.ok.data})`);
+    const flags = res.ok ? BigInt(res.ok.flags?.bits ?? res.ok.flags ?? 0) : 0n; // ReturnFlags { bits }
+    if ((flags & 1n) === 1n) throw new Error(`Solidity call reverts (data ${res.ok.data})`);
     const w = j.weightRequired || j.gasRequired;
     if (w) weight = { refTime: (BigInt(w.refTime) * 3n) / 2n, proofSize: (BigInt(w.proofSize) * 3n) / 2n };
     const sd = j.storageDeposit || {};
