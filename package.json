@@ -1,0 +1,17 @@
+{
+  "name": "portal-meter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pay-per-request API settlement on Portaldot V3: EVM settlement + ink! registry",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 test/"
+  },
+  "dependencies": {
+    "@polkadot/api": "16.5.6",
+    "@polkadot/api-contract": "16.5.6",
+    "ethers": "6.16.0"
+  }
+}

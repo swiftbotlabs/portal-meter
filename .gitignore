@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.env
+secrets/
+out/
+cache/
+target/
+.DS_Store
+__pycache__/
+*.bak-*
+broadcast/
