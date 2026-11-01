@@ -33,7 +33,7 @@ slide('title', `
   <div class="kicker">Portaldot Hacker House 2026 · Modular Cloud &amp; Middleware</div>
   <h1>Portal Meter</h1>
   <p class="lead">Sell any API per call on Portaldot V3,<br>settled across both of its contract VMs.</p>
-  <p class="links">github.com/swiftbotlab/portal-meter · portal-meter.swiftbotlab.workers.dev/demo</p>`);
+  <p class="links">portal-meter.swiftbotlab.workers.dev/demo · Swift Bot Labs</p>`);
 
 slide('', `
   <h2>The problem</h2>
@@ -112,7 +112,7 @@ slide('proof', `
         <li>36 negative checks on the live seller and contracts: replays, strangers and tampered vouchers are refused</li>
         <li>Independent security review before launch: findings fixed, MeterSession redeployed</li>
         <li>The live page buys a real call from the browser and replays the log against both VMs</li>
-        <li>Open source, MIT: github.com/swiftbotlab/portal-meter</li>
+        <li>Open source, MIT. Source, history and proofs: portal-meter.swiftbotlab.workers.dev</li>
       </ul>
     </div>
     <img class="shot" src="demo-page.png" alt="live page">
