@@ -21,6 +21,8 @@ hosted seller ([`deployments/proof/session-measure.json`](../deployments/proof/s
 | Payer: `close` clears two slots | 7.67 back |
 | Left locked for good | 7.6, or 0.076 per request |
 
+The payer closed both measured sessions in blocks 297818 and 297819 and took back 15.34 tPOT, or 7.67 each, plus the unused 0.06 pUSD.
+
 That is about 100 times less per request than the escrow path, and each further request in the session lowers it. Each further batch
 adds one anchor. The seller decides when to settle: at 25 waiting requests, after 6 hours, or close to a session's expiry, with a gap
 of 30 minutes between batches. Block [282559](https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events) settled 137

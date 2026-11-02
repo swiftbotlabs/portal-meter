@@ -60,6 +60,23 @@
     {
       "step": "payee",
       "pusdReceived": "1370000"
+    },
+    {
+      "step": "close",
+      "session": "0x58bb48f6d5a7de73670d624c91e509fac1503c4e7f57349ac727576530ab8bc2",
+      "tx": "0xd0c3f81152850aef25ce4383f4b167be3d494735677314df944e85ed45a3678e",
+      "block": 297818
+    },
+    {
+      "step": "close",
+      "session": "0x8ccb86f1ced497261ccc1602ae501c0ab8e5bf296c2680fbd2a5c1f6abe10b37",
+      "tx": "0x417d0dddbb13fedc198a1642620f2905f9aea191781b845d732c49ec01c173c2",
+      "block": 297819
+    },
+    {
+      "step": "closed",
+      "buyerTpot": 15.33616868698274,
+      "pusdReturned": "60000"
     }
   ],
   "toClose": [
