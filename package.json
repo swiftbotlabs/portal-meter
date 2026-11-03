@@ -12,9 +12,12 @@
   "files": [
     "src",
     "bin",
+    "scripts/lib",
+    "deployments",
     "README.md",
     "LICENSE",
-    "SECURITY.md"
+    "SECURITY.md",
+    "contracts/ink/meter_registry/artifact/meter_registry.contract"
   ],
   "license": "MIT",
   "engines": {
