@@ -19,7 +19,7 @@ By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & M
 call from your browser with no wallet, reads both VMs directly, and includes a free receipt verifier.
 **Hosted seller:** [portal-meter.swiftbotlab.workers.dev](https://portal-meter.swiftbotlab.workers.dev/) (a paid Portaldot
 data API at 0.01 pUSD per call, on the testnet).
-**Demo video (2:30, voice-over and captions):** [MP4](https://portal-meter.swiftbotlab.workers.dev/demo/portal-meter-demo.mp4). **Pitch deck:**
+**Demo video (2:23, voice-over and captions):** [MP4](https://portal-meter.swiftbotlab.workers.dev/demo/portal-meter-demo.mp4). **Pitch deck:**
 [PDF](https://portal-meter.swiftbotlab.workers.dev/pitch/portal-meter-deck.pdf).
 
 ## Check it in two minutes
