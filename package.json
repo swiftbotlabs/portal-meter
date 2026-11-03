@@ -4,6 +4,18 @@
   "private": true,
   "description": "Pay-per-request API settlement on Portaldot V3: EVM settlement + ink! registry",
   "type": "module",
+  "exports": {
+    ".": "./src/meter.mjs",
+    "./session-client": "./src/session-client.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "bin",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=20"

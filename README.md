@@ -53,8 +53,12 @@ anchor, 3.68 tPOT. Each further batch of a session adds one more anchor. Settlem
 
 ## Add it to your API
 
+```bash
+npm i github:swiftbotlabs/portal-meter
+```
+
 ```js
-import { createMeter, metered } from './src/meter.mjs';
+import { createMeter, metered } from 'portal-meter';
 
 const meter = createMeter({ chainId, sessionContract, endpointId, wallet, token, tokenSymbol, decimals, readSession });
 
