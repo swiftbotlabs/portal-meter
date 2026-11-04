@@ -1,0 +1,19 @@
+{
+  "name": "portal-meter-example-paid-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example: sell account transfer history from Portaldot's explorer indexer per call, with Portal Meter",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/app.test.mjs"
+  },
+  "dependencies": {
+    "ethers": "6.16.0",
+    "portal-meter": "github:swiftbotlabs/portal-meter"
+  }
+}
