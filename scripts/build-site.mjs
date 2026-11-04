@@ -27,6 +27,10 @@ read('contracts/ink/meter_registry/lib.rs', 'meter_registry.lib.rs');
 read('worker/src/index.mjs', 'worker-index.mjs');
 read('src/meter.mjs', 'meter.mjs');
 read('src/session.mjs', 'session.mjs');
+read('src/settler.mjs', 'settler.mjs');
+read('examples/paid-indexer/README.md', 'paid-indexer-README');
+read('examples/paid-indexer/RUN.md', 'paid-indexer-RUN');
+read('examples/paid-indexer/server.mjs', 'paid-indexer-server.mjs');
 
 mkdirSync(join(OUT, 'source'));
 const excludes = [':(exclude)demo/portal-meter-demo.mp4', ':(exclude)contracts/evm/lib'];
@@ -52,6 +56,7 @@ writeFileSync(join(OUT, 'index.html'), `<!doctype html><html lang="en"><head><me
 @media (prefers-color-scheme:dark){body{background:#0e111a;color:#e8ebf3}a{color:#ff4fa8}code{background:#1f2638}}</style></head><body>
 <h1>Portal Meter</h1><p>Sell any API per call on Portaldot V3, settled across both of its contract VMs. By Swift Bot Labs.</p>
 <ul>${li('demo/', 'Live page: buy a real API call, no wallet')}${li('demo/portal-meter-demo.mp4', 'Demo video, 2:23')}${li('pitch/portal-meter-deck.pdf', 'Pitch deck, PDF')}${li('read/README.txt', 'README')}${li('read/SESSIONS.txt', 'Sessions: protocol, guarantees and limits')}${li('read/ARCHITECTURE.txt', 'Architecture')}${li('read/SECURITY.txt', 'Security')}${li('read/PORTALDOT_V3_NOTES.txt', 'Measured Portaldot V3 notes')}</ul>
+<h2>Reuse</h2><ul>${li('read/paid-indexer-README.txt', 'A second seller in a folder of its own: the paid indexer example')}${li('read/paid-indexer-RUN.txt', 'Its run on the testnet: clean install, register, two paid calls, one cross-VM settlement')}${li('read/paid-indexer-server.mjs.txt', 'Its seller, built on the published entry points only')}${li('read/settler.mjs.txt', 'createSettler: settlement for any seller')}</ul>
 <h2>Source</h2><ul>${li('source/portal-meter-src.tar.gz', `Source at ${head}, ${count} commits`)}${li('source/commit-history.txt', 'Commit history with dates and files')}${li('read/MeterSession.sol.txt', 'MeterSession.sol')}${li('read/MeterSettlement.sol.txt', 'MeterSettlement.sol')}${li('read/meter_registry.lib.rs.txt', 'MeterRegistry (ink!)')}${li('read/worker-index.mjs.txt', 'The hosted seller')}${li('read/meter.mjs.txt', 'The metering core')}</ul>
 <p>Full git history as a bundle, in parts: ${parts.map(p => `<a href="source/${p}">${p.split('.').pop()}</a>`).join(' ')}. Join them with <code>cat portal-meter.bundle.part* &gt; portal-meter.bundle</code>, then <code>git clone portal-meter.bundle</code>.</p>
 <h2>Proof</h2><ul>${li('deployments/sessions.json', 'Sessions: contracts and transactions')}${li('deployments/testnet.json', 'Escrow: contracts and transactions')}${li('deployments/proof/session-measure.json', 'Measured costs')}${li('deployments/proof/session-negative-checks.json', 'Negative checks')}${li('.well-known/portal-meter', 'Seller catalog')}${li('health', 'Seller health')}</ul>
