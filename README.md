@@ -132,6 +132,11 @@ PortaldotV3 testnet: EVM chain id `420420777`, `https://test-evm-rpc-v3.portaldo
 | Payment token, escrow path: native asset [#43907 tUSDm](https://scanner-testnet-v3.portaldot.dev/#/assets/43907) (test token, no value) | ERC-20 precompile `0x0000ab8300000000000000000000000000010000` | [block 276610](https://scanner-testnet-v3.portaldot.dev/#/blocks/276610?tab=events) |
 | Payment token, sessions: native asset [#7777 pUSD](https://scanner-testnet-v3.portaldot.dev/#/assets/7777), Portaldot's own test dollar | ERC-20 precompile `0x00001e6100000000000000000000000000010000` | genesis of the test asset |
 
+Every Solidity contract we deployed matches this repository byte for byte: `MeterSettlement`, `MeterSession` and the retired
+first `MeterSession` (`0xeA6bf3B9...`, replaced after the security review, source in `contracts/evm-retired-v1/`).
+Checked independently by [Bytematch](https://bytematch-portaldot.vercel.app/repo/swiftbotlabs/portal-meter), another Hacker
+House team's source verifier, on 4 Nov 2026: 3 of 3 exact.
+
 | Step | Transaction | Block |
 |---|---|---|
 | Provider registers endpoint 1 (account view, 0.025 tUSDm) in Solidity | `0x44a7d0b4864bb4ea76649a1715401d3afde88ee56acffd64fb7600168bfdf39e` | [276612](https://scanner-testnet-v3.portaldot.dev/#/blocks/276612?tab=events) |
@@ -229,6 +234,7 @@ npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet
 | Path | What |
 |---|---|
 | `contracts/evm/` | `MeterSettlement.sol`: endpoints, escrowed payments, settle once, refunds. `MeterSession.sol`: prepaid budgets, vouchers, redeem |
+| `contracts/evm-retired-v1/` | source of the first `MeterSession` deployment, kept only so its on-chain code can be checked |
 | `contracts/ink/meter_registry/` | `MeterRegistry` (ink! 5): endpoint URLs, outcome anchors, buyer feedback, reputation |
 | `src/` | metering core (`meter.mjs`), session protocol and client, escrow seller and buyer, verifier, SCALE encoder without polkadot.js, EVM and ink! clients |
 | `worker/` | the hosted seller on Cloudflare Workers |
