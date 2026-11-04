@@ -108,8 +108,9 @@ slide('proof', `
         <div><b>${counts.node}</b><span>Node tests incl.<br>end to end on a chain</span></div>
       </div>
       <ul class="small">
-        <li>CI on every push: Foundry, ink! release build (cargo-contract 5.0.3), Node end to end</li>
+        <li>A CI workflow in the repository: Foundry, ink! release build (cargo-contract 5.0.3), Node end to end</li>
         <li>36 negative checks on the live seller and contracts: replays, strangers and tampered vouchers are refused</li>
+        <li>Reused from a folder of its own: examples/paid-indexer installs the package, sells a different API (Portaldot's explorer index) and settled on the testnet, redeem + ink! anchor in one tx (block 323215)</li>
         <li>Independent security review before launch: findings fixed, MeterSession redeployed</li>
         <li>The live page buys a real call from the browser and replays the log against both VMs</li>
         <li>Open source, MIT. Source, history and proofs: portal-meter.swiftbotlab.workers.dev</li>

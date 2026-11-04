@@ -1,8 +1,8 @@
 # Portal Meter
 
-[![CI](https://github.com/swiftbotlabs/portal-meter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swiftbotlabs/portal-meter/actions/workflows/ci.yml)
-
-**Sell any API per call on Portaldot V3, settled across both of its contract VMs.**
+**Portal Meter sells any API per call on Portaldot V3. Paying on-chain for each request locked 7.53 tPOT of storage deposit
+for good on this chain, so we built prepaid sessions: 100 requests locked about 7.6 tPOT in total and were settled in one
+Ethereum transaction across Solidity and ink!.**
 
 An API provider lists an endpoint with a price. A client pays per call in a Portaldot native asset, reached from Solidity
 through the runtime's ERC-20 precompile. Money moves in a Solidity contract on Portaldot's EVM. In the same Ethereum-signed
@@ -19,8 +19,10 @@ By Swift Bot Labs for the Portaldot Hacker House 2026, track **Modular Cloud & M
 call from your browser with no wallet, reads both VMs directly, and includes a free receipt verifier.
 **Hosted seller:** [portal-meter.swiftbotlab.workers.dev](https://portal-meter.swiftbotlab.workers.dev/) (a paid Portaldot
 data API at 0.01 pUSD per call, on the testnet).
-**Demo video (2:23, voice-over and captions):** [MP4](https://portal-meter.swiftbotlab.workers.dev/demo/portal-meter-demo.mp4). **Pitch deck:**
-[PDF](https://portal-meter.swiftbotlab.workers.dev/pitch/portal-meter-deck.pdf).
+**Demo video (2:23):** [YouTube](https://youtu.be/sgGdQ-WLum0) or [MP4](https://portal-meter.swiftbotlab.workers.dev/demo/portal-meter-demo.mp4).
+**Pitch deck:** [PDF](https://portal-meter.swiftbotlab.workers.dev/pitch/portal-meter-deck.pdf).
+**Reuse:** [`examples/paid-indexer/`](examples/paid-indexer) installs the package in a folder of its own, sells a different API and settles
+on the testnet; its run log is [RUN.md](examples/paid-indexer/RUN.md).
 
 ## Check it in two minutes
 
@@ -70,8 +72,8 @@ export default { fetch: req => meter.charge(req, { price: 10_000n }, () => forec
 ```
 
 The core has no server of its own and needs no polkadot.js. [`worker/`](worker) is the real thing: the hosted seller in one file, with
-a Durable Object as its ledger and a cron for settlement. [`examples/sell-an-api.mjs`](examples/sell-an-api.mjs) is a thirty-line paid
-API. Then:
+a Durable Object as its ledger and a cron for settlement. `createSettler` from `portal-meter/settle` does the same settlement from any
+ledger, on any runtime with `fetch`. [`examples/sell-an-api.mjs`](examples/sell-an-api.mjs) is a thirty-line paid API. Then:
 
 ```bash
 node bin/portal-meter.mjs register --keys provider.env --asset 7777 --price 0.01 --payee 0x… --url https://you.example/v1/   # one tx, both VMs
@@ -81,6 +83,17 @@ node bin/portal-meter.mjs session-buy https://portal-meter.swiftbotlab.workers.d
 
 `pUSD` (asset 7777) is Portaldot's own test dollar: any builder can get it from the native exchange, so this works with real testnet
 funds and no help from us.
+
+### Reused from a folder of its own
+
+[`examples/paid-indexer/`](examples/paid-indexer) is a second seller written the way a third party would write it: it depends on the
+package only, uses only its public entry points (`portal-meter`, `/settle`, `/chain`, `/address`, `/session-client`), and sells a
+different API, account transfer history from Portaldot's public explorer indexer, at 0.01 pUSD per call. It was installed from the
+packed package in an empty folder and run on the testnet: endpoint 4 registered on both VMs in one transaction
+([block 323203](https://scanner-testnet-v3.portaldot.dev/#/blocks/323203?tab=events)), a session opened, two paid calls, and the
+seller's own settlement loop sent one Ethereum transaction with the Solidity redeem and the ink! anchor
+([block 323215](https://scanner-testnet-v3.portaldot.dev/#/blocks/323215?tab=events)). Every command and output:
+[`examples/paid-indexer/RUN.md`](examples/paid-indexer/RUN.md). The example is ours, not another team's, and its seller ran on our machine.
 
 > **Live on the PortaldotV3 testnet since 2026-11-01:** both payment contracts, the ink! registry, the hosted seller, and real
 > requests settled in Solidity and anchored in ink! in one Ethereum transaction. See [Testnet deployment](#testnet-deployment).
@@ -192,7 +205,7 @@ Requirements: Node.js 20+, [Foundry](https://getfoundry.sh) for the contract tes
 ```bash
 npm ci --ignore-scripts
 (cd contracts/evm && forge build && forge test)   # 42 Solidity tests: unit, fuzz, invariant
-npm test                                           # 54 Node tests, incl. end to end on a local anvil chain
+npm test                                           # 66 Node tests, incl. end to end on a local anvil chain
 node scripts/probe.mjs                             # re-checks the Portaldot facts this project relies on (read-only)
 ```
 
@@ -217,7 +230,7 @@ node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env             # res
 node scripts/deploy-testnet.mjs --keys ~/portaldot_testnet.env --no-ink    # EVM half only, about 400 tPOT
 ```
 
-The ink! contract is built in CI (`cargo contract build --release`, cargo-contract 5.0.3); the bundle used for the
+The ink! contract is built with `cargo contract build --release` (cargo-contract 5.0.3, also in the CI workflow); the bundle used for the
 deployment is committed under `contracts/ink/meter_registry/artifact/`.
 
 Sessions and the hosted seller:
@@ -238,13 +251,18 @@ npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet
 | `contracts/ink/meter_registry/` | `MeterRegistry` (ink! 5): endpoint URLs, outcome anchors, buyer feedback, reputation |
 | `src/` | metering core (`meter.mjs`), session protocol and client, escrow seller and buyer, verifier, SCALE encoder without polkadot.js, EVM and ink! clients |
 | `worker/` | the hosted seller on Cloudflare Workers |
-| `examples/` | a paid API in thirty lines |
+| `examples/` | a paid API in thirty lines, and `paid-indexer/`: a separate consumer of the package with its testnet run log |
 | `bin/portal-meter.mjs` | command line: `status`, `verify`, `buy`, `serve` |
 | `scripts/` | key generation (testnet only), network probe, deployment + live demo, pitch deck builder |
 | `test/` | Node tests, including end to end on a local anvil chain |
-| `demo/` | the live page (static, served by GitHub Pages) |
+| `demo/` | the live page (static, served by the hosted seller) |
 | `docs/` | architecture, sessions, protocol, Portaldot V3 network notes |
 | `pitch/` | architecture diagram and pitch deck |
+
+## What we don't claim
+
+No users and no revenue: every request so far comes from our own keys and from visitors of the live page. Test tokens have no value.
+The security review before launch was done by a reviewer who had not written the code, not by an audit firm. Nothing is on mainnet.
 
 ## Credits and prior work
 
