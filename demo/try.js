@@ -45,7 +45,7 @@ export async function setupTry(s, net) {
         ['requests settled, all sessions', h.requestsSettled], ['on-chain transactions for them', h.batches], ['waiting for the next batch', h.requestsWaitingForSettlement],
       ].map(([k, x]) => `<div class="stat"><b>${esc(x)}</b><span>${esc(k)}</span></div>`).join('');
       const rows = (b.batches || []).map(x => `<tr><td>${blockLink(x.block)}</td><td>${x.requests}</td><td>${x.sessions.length}</td><td class="mono">${esc(short(x.tx, 8))}</td></tr>`);
-      if (rows.length) $('try-batches').tBodies[0].innerHTML = rows.join('');
+      $('try-batches').tBodies[0].innerHTML = rows.length ? rows.join('') : '<tr><td colspan="4" class="muted">no batch yet</td></tr>';
       return v;
     } catch (e) {
       $('try-stats').textContent = `hosted seller unreachable: ${e.message}`;

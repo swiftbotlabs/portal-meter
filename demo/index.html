@@ -59,7 +59,7 @@
       <pre id="try-body" class="body" hidden></pre>
       <div class="totals" id="try-stats"></div>
       <div class="table-scroll"><table id="try-batches"><thead><tr><th>block</th><th>requests settled</th><th>sessions</th><th>one Ethereum tx</th></tr></thead>
-        <tbody><tr><td colspan="4" class="muted">no batch yet</td></tr></tbody></table></div>
+        <tbody><tr><td colspan="4" class="muted">loading…</td></tr></tbody></table></div>
       <div class="row"><button id="try-verify" type="button" class="ghost">Replay the session log against the chain</button></div>
       <div id="try-verdict" aria-live="polite"></div>
       <h3 class="sub">What one request costs on-chain</h3>
@@ -76,11 +76,7 @@
       <video controls preload="none" poster="video-poster.jpg" style="width:100%;border-radius:8px" src="portal-meter-demo.mp4"></video>
     </section>
 
-    <section id="pending" class="card notice" hidden>
-      <h2>Testnet deployment pending</h2>
-      <p>The contracts are not deployed to the PortaldotV3 testnet yet. The panels below already read the live
-        chain: the network itself and Portaldot's native-asset ERC-20 precompile.</p>
-    </section>
+    <section id="pending" class="card notice" hidden></section>
 
     <section class="grid">
       <div class="card">
@@ -108,7 +104,7 @@
         endpoint, one "served" is one anchored batch of many requests.</p>
       <div class="table-scroll"><table id="endpoints"><thead><tr>
         <th>#</th><th>endpoint</th><th>price</th><th>provider</th><th>served</th><th>refunded</th><th>confirmed</th><th>disputed</th><th>score</th>
-      </tr></thead><tbody><tr><td colspan="9" class="muted">no endpoints yet</td></tr></tbody></table></div>
+      </tr></thead><tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody></table></div>
     </section>
 
     <section class="card">
@@ -116,7 +112,7 @@
       <div class="totals" id="totals"></div>
       <div class="table-scroll"><table id="activity"><thead><tr>
         <th>block</th><th>event</th><th>request</th><th>amount</th><th>detail</th><th>tx</th>
-      </tr></thead><tbody><tr><td colspan="6" class="muted">no activity yet</td></tr></tbody></table></div>
+      </tr></thead><tbody><tr><td colspan="6" class="muted">loading…</td></tr></tbody></table></div>
     </section>
 
     <section class="card" id="verify">

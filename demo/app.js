@@ -134,7 +134,7 @@ async function refreshContracts(d, md, sessions) {
       <td class="mono">${esc(short(ep.provider))}</td><td>${rep ? rep.served : '-'}</td><td>${rep ? rep.refunded : '-'}</td>
       <td>${rep ? rep.confirmed : '-'}</td><td>${rep ? rep.disputed : '-'}</td><td>${rep ? (rep.scoreBps / 100).toFixed(1) + ' %' : '-'}</td></tr>`);
   }
-  if (rows.length) $('endpoints').tBodies[0].innerHTML = rows.join('');
+  $('endpoints').tBodies[0].innerHTML = rows.length ? rows.join('') : '<tr><td colspan="9" class="muted">no endpoints yet</td></tr>';
 
   const logs = await evm.getLogs({ address: d.settlement, fromBlock: d.fromBlock, toBlock: 'latest' });
   const ev = [];
@@ -153,7 +153,7 @@ async function refreshContracts(d, md, sessions) {
     ev.push(`<tr><td>${l.blockNumber}</td><td><span class="pill ${cls}">${p.name}</span></td><td class="mono">${esc(short(p.args.requestId))}</td>
       <td>${formatUnits(p.args.amount, md.decimals)}</td><td>${esc(detail)}</td><td class="mono">${esc(short(l.transactionHash))}</td></tr>`);
   }
-  if (ev.length) $('activity').tBodies[0].innerHTML = ev.reverse().slice(0, 60).join('');
+  $('activity').tBodies[0].innerHTML = ev.length ? ev.reverse().slice(0, 60).join('') : '<tr><td colspan="6" class="muted">no activity yet</td></tr>';
   $('totals').innerHTML = [['paid requests', paid], ['served', served], ['refunded', refunded], [`volume (${md.symbol})`, formatUnits(volume, md.decimals)]]
     .map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('');
   return reg;
@@ -223,6 +223,9 @@ async function main() {
     return { decimals: 6, symbol: '' };
   });
   if (!d) {
+    // only when the deployment file cannot be read; the static page carries no deployment claims of its own
+    $('pending').innerHTML = `<h2>Deployment file unavailable</h2><p>The deployment record could not be loaded. The panels below
+      still read the live chain: the network itself and Portaldot's native-asset ERC-20 precompile.</p>`;
     $('pending').hidden = false;
     kv($('contracts-kv'), [['status', 'not deployed yet']]);
     setupVerifier(null, null);
