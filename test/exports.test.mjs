@@ -3,6 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
+import { PATHS } from '../src/config.mjs';
 
 test('every documented entry point resolves and exports what a seller and a buyer need', async () => {
   const core = await import('portal-meter');
@@ -40,4 +42,14 @@ test('address helpers: checksum, both address forms, and a refusal that an API c
   for (const bad of ['5C69HXuCHWTgFcDRUAmwEqgWoXdVwAfmJspoda2yZWXcwE8Q', 'not an address', '0x1234', '../../etc/passwd']) {
     assert.throws(() => parseAddress(bad), e => e instanceof BadInput && e.httpStatus === 400, bad);
   }
+});
+
+test('the package ships the published deployment, never local state', () => {
+  const r = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: PATHS.root, encoding: 'utf8', timeout: 60_000 });
+  assert.equal(r.status, 0, r.stderr);
+  const files = JSON.parse(r.stdout)[0].files.map(f => f.path);
+  for (const must of ['bin/portal-meter.mjs', 'src/settler.mjs', 'deployments/sessions.json', 'deployments/testnet.json', 'scripts/lib/sub.mjs']) assert.ok(files.includes(must), must);
+  const local = files.filter(f => /partial\.json$|seller-state|\.env$|secrets/.test(f));
+  assert.deepEqual(local, []);
+  assert.ok(files.length >= 30, `only ${files.length} files`);
 });
