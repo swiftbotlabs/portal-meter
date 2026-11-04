@@ -211,6 +211,7 @@ function setupVerifier(d, reg) {
 
 // ------------------------------------------------------------------ boot
 async function main() {
+  document.getElementById('prerendered')?.remove(); // the static snapshot's note: from here on every panel is live
   refreshNetwork();
   setInterval(refreshNetwork, 12_000);
   let d = null;

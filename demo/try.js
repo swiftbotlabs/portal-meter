@@ -24,6 +24,7 @@ export async function setupTry(s, net) {
   const box = $('try');
   if (!s || !s.demoSession) return;
   box.hidden = false;
+  $('try-verdict').innerHTML = ''; // a verdict baked into the static page is for readers without JavaScript: here it runs live
   const base = s.hostedSeller;
   const demo = s.demoSession;
   const signer = new Wallet(keccak256(toUtf8Bytes(demo.seed)));
