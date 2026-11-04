@@ -11,7 +11,9 @@ const OUT = join(ROOT, 'worker', 'public');
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, maxBuffer: 1 << 28 });
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
-for (const d of ['demo', 'src', 'deployments']) cpSync(join(ROOT, d), join(OUT, d), { recursive: true });
+for (const d of ['demo', 'src']) cpSync(join(ROOT, d), join(OUT, d), { recursive: true });
+// the published deployment record only: resumable deploy state and local seller state stay on the machine
+for (const f of ['testnet.json', 'sessions.json', 'proof', 'receipts']) cpSync(join(ROOT, 'deployments', f), join(OUT, 'deployments', f), { recursive: true });
 mkdirSync(join(OUT, 'pitch'));
 for (const f of ['portal-meter-deck.pdf', 'architecture.svg', 'block-events.png', 'demo-page.png']) cpSync(join(ROOT, 'pitch', f), join(OUT, 'pitch', f));
 
