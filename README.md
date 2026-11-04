@@ -237,8 +237,9 @@ Sessions and the hosted seller:
 
 ```bash
 node scripts/deploy-sessions.mjs --keys ~/portaldot_testnet.env --hosted ~/portaldot_hosted.env --plan    # then without --plan
-# set SESSION_CONTRACT and ENDPOINT_ID in worker/wrangler.toml, then from worker/:
-npx wrangler@4.151.1 deploy
+# set SESSION_CONTRACT and ENDPOINT_ID in worker/wrangler.toml, then:
+node scripts/build-site.mjs && node scripts/prerender-demo.mjs   # site files, and a static first paint of the live page
+cd worker && npx wrangler@4.151.1 deploy
 npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet key, from stdin
 ```
 

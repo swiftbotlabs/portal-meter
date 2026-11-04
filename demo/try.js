@@ -127,8 +127,12 @@ export async function setupTry(s, net) {
         v.checks.push({ name: `ink! registry holds the anchor for the batch up to request ${r.count}`, ok: !!a, detail: a ? `block ${a.block}` : 'not found' });
       }
       const ok = v.checks.every(c => c.ok);
+      const last = rows.slice(-5).reverse().map(r => `<tr><td>${r.n}</td><td class="mono">${esc(short(r.requestHash, 8))}</td><td class="mono">${esc(short(r.responseHash, 8))}</td></tr>`).join('');
+      const batches = redemptions.map(r => `${r.count}`).join(', ');
       out.innerHTML = `<div class="verdict ${ok ? 'ACCEPT' : 'REJECT'}">${ok ? 'ACCEPT' : 'REJECT'}</div><ul class="checks">${v.checks.map(c =>
-        `<li><span class="m ${c.ok ? 'PASS' : 'FAIL'}">${c.ok ? 'PASS' : 'FAIL'}</span><span><b>${esc(c.name)}</b> <span class="d">${esc(short(String(c.detail), 10))}</span></span></li>`).join('')}</ul>`;
+        `<li><span class="m ${c.ok ? 'PASS' : 'FAIL'}">${c.ok ? 'PASS' : 'FAIL'}</span><span><b>${esc(c.name)}</b> <span class="d">${esc(short(String(c.detail), 10))}</span></span></li>`).join('')}</ul>
+        <p class="muted">Session ${esc(short(demo.id, 8))}: ${rows.length} requests in the public log, redeemed on-chain in batches up to request ${esc(batches || 'none yet')}. The latest requests:</p>
+        <div class="table-scroll"><table><thead><tr><th>request</th><th>request hash</th><th>response hash</th></tr></thead><tbody>${last}</tbody></table></div>`;
     } catch (e) {
       out.innerHTML = `<div class="verdict REJECT">REJECT</div><p class="muted">${esc(e.message)}</p>`;
     }
