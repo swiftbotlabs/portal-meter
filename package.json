@@ -7,6 +7,10 @@
   "exports": {
     ".": "./src/meter.mjs",
     "./session-client": "./src/session-client.mjs",
+    "./chain": "./src/session-chain.mjs",
+    "./settle": "./src/settler.mjs",
+    "./address": "./src/address.mjs",
+    "./deployments/sessions.json": "./deployments/sessions.json",
     "./package.json": "./package.json"
   },
   "files": [
