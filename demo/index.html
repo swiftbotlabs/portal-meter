@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portal Meter · live on Portaldot V3 testnet</title>
   <meta name="description" content="Pay-per-request API settlement on Portaldot V3: Solidity escrow on the EVM, ink! provider registry on WASM. Live testnet state and a free receipt verifier.">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0a0b0e" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0d19" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="../assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="../assets/fonts/jbmono-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/martianmono-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../assets/site.css">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('pm-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
   <script type="importmap">
     { "imports": { "ethers": "./vendor/ethers-6.16.0.min.js" } }
   </script>
@@ -33,6 +33,7 @@
       </nav>
       <div class="nav-end">
         <div class="net" id="net"><span class="dot"></span><span id="net-text">connecting to PortaldotV3 testnet…</span></div>
+        <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch to dark mode" aria-pressed="false"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A7.5 7.5 0 0 1 9.4 4.5a7.5 7.5 0 1 0 10.1 10.1z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></button>
       </div>
     </div>
   </header>
@@ -116,8 +117,12 @@
     </section>
 
     <section class="card" id="video">
-      <h2>Demo video</h2>
-      <video controls preload="none" poster="video-poster.jpg" width="1920" height="1080" src="portal-meter-demo.mp4"></video>
+      <h2>Demo video, 2:23</h2>
+      <p class="muted">The measured cost problem, a real call bought from this page, block 282559 settling 137 requests in one transaction, the log replayed against the chain, and the escrow path.
+        <a href="https://youtu.be/sgGdQ-WLum0" target="_blank" rel="noopener">Watch on YouTube</a> or <a href="portal-meter-demo.mp4">download the MP4</a> (7 MB).</p>
+      <video controls preload="metadata" poster="video-poster.jpg" width="1920" height="1080" src="portal-meter-demo.mp4">
+        <a href="portal-meter-demo.mp4"><img src="video-poster.jpg" alt="Portal Meter demo video, 2:23: play the MP4" width="1920" height="1080"></a>
+      </video>
     </section>
 
     <section id="pending" class="card notice" hidden></section>
@@ -135,6 +140,9 @@
 
     <section class="card">
       <h2>Payment token: a native asset seen as an ERC-20</h2>
+      <p class="muted">Two test assets, one per payment path. The prepaid sessions and the hosted seller (endpoints 3 and 4) are
+        priced in <b>pUSD</b>, asset 7777, Portaldot's own test dollar. The per-request escrow run (endpoints 1 and 2) used
+        <b>tUSDm</b>, asset 43907 "Portal Meter Test USD", which we created for it; that is the asset read below.</p>
       <p class="muted">Portaldot exposes every <code>pallet-assets</code> token to Solidity at
         <code>0x{asset id}…00010000</code>. The supply below is read twice: once through the EVM (<code>totalSupply()</code>
         on the precompile) and once from Substrate storage.</p>
@@ -152,7 +160,10 @@
     </section>
 
     <section class="card">
-      <h2>Activity</h2>
+      <h2>Escrow activity</h2>
+      <p class="muted">Every <code>Paid</code>, <code>Served</code> and <code>Refunded</code> event of <code>MeterSettlement</code>, in
+        tUSDm. What was paid into escrow is either settled to the provider or refunded to the payer, so the first amount is the
+        sum of the other two. Session requests settle through <code>MeterSession</code> and are counted in the buy box above.</p>
       <div class="totals" id="totals"></div>
       <div class="table-scroll"><table id="activity"><thead><tr>
         <th>block</th><th>event</th><th>request</th><th>amount</th><th>detail</th><th>tx</th>
@@ -188,5 +199,6 @@
     </div>
   </footer>
   <script type="module" src="app.js"></script>
+  <script src="../assets/theme.js" defer></script>
 </body>
 </html>

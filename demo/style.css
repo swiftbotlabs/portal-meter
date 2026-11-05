@@ -215,3 +215,54 @@ textarea:focus-visible { outline: none; border-color: var(--accent); box-shadow:
   button:not(:disabled):active { transform: none; }
   @keyframes step-fade { from { opacity: 0; } }
 }
+
+/* ================================================================ the postage-meter world (v2): same layout and ids,
+   restyled to match the landing page. The buy box is the meter: it carries across from the landing page's hero. */
+.nav-end { gap: var(--s-2); }
+.net { border-color: var(--line-2); }
+.intro h1 { font-size: clamp(2.25rem, 1.3rem + 2.6vw, 3.75rem); line-height: 0.98; letter-spacing: -0.02em; font-stretch: 70%; font-weight: 820; max-width: 18ch; }
+.intro .lead { font-size: var(--t-18); }
+.intro .eyebrow { font-size: var(--t-14); color: var(--ink-2); }
+.card h2 { font-size: 1.5rem; font-stretch: 78%; font-weight: 760; letter-spacing: -0.01em; line-height: 1.1; }
+.sub, .side-h { font-family: var(--display); font-size: 1.0625rem; font-stretch: 82%; font-weight: 720; }
+#try { view-transition-name: buy-box; border-color: var(--line-2); }
+#try .try-main { position: relative; }
+.try-head h2 { font-size: clamp(1.75rem, 1.2rem + 1.4vw, 2.25rem); font-stretch: 70%; font-weight: 820; }
+/* the price is a meter mark: double rule in franking ink */
+.price { font: 500 0.75rem/1 var(--mono); font-stretch: 87.5%; color: var(--accent-text); background: transparent; border: 2px solid var(--accent); outline: 1px solid var(--accent); outline-offset: 2px; border-radius: 2px; padding: 6px 10px; margin-right: 3px; filter: drop-shadow(var(--ink-glow, 0 0 0 transparent)); }
+.try-row select, .try-row input { height: 48px; font-size: 0.8125rem; font-stretch: 87.5%; }
+#try-btn, #verify-btn, .row > button:not(.ghost) {
+  height: 48px; padding: 0 22px; font-weight: 600; box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 55%, #000), var(--glow);
+  transition: background-color var(--d-1) var(--ease-move), transform var(--d-1) var(--ease-move), box-shadow var(--d-2) var(--ease-move), opacity var(--d-1) var(--ease-move);
+}
+#try-btn:not(:disabled):hover, #verify-btn:not(:disabled):hover, .row > button:not(.ghost):not(:disabled):hover { transform: translateY(1px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 55%, #000), var(--glow); }
+#try-btn:not(:disabled):active, #verify-btn:not(:disabled):active { transform: translateY(2px) scale(0.985); box-shadow: none; }
+button.ghost { height: 44px; padding: 0 16px; font-weight: 600; box-shadow: 0 2px 0 var(--line); }
+button.ghost:not(:disabled):hover { border-color: var(--ink-2); transform: translateY(1px); box-shadow: 0 1px 0 var(--line); }
+.checks .m { font: 500 10.5px/1 var(--mono); font-stretch: 87.5%; letter-spacing: 0.02em; border-radius: 3px; }
+#try-steps { border-style: dashed; border-color: var(--line-2); }
+.howto li::before { background: transparent; border: 2px solid var(--accent); color: var(--accent-text); font: 800 12px/1 var(--display); font-stretch: 80%; width: 24px; height: 24px; }
+.howto li { font-size: var(--t-14); }
+.howto b { font-size: var(--t-16); font-weight: 600; }
+.stat b { font-family: var(--display); font-stretch: 72%; font-weight: 800; font-size: 1.625rem; letter-spacing: -0.01em; line-height: 1.1; }
+.stat span { font-size: 0.8125rem; }
+/* the replay verdict lands like a postmark */
+.verdict { font: 700 var(--t-14)/1 var(--mono); font-stretch: 87.5%; border-width: 2px !important; outline: 1px solid currentColor; outline-offset: 2px; border-radius: 3px; transform: rotate(-2deg); }
+.verdict.ACCEPT { animation: verdict-in 420ms var(--ease-stamp) both; }
+@keyframes verdict-in { from { opacity: 0; transform: rotate(-10deg) scale(1.4); } to { opacity: 1; transform: rotate(-2deg) scale(1); } }
+.flow .step b { background: transparent; border: 2px solid var(--accent); color: var(--accent-text); font: 800 12px/1 var(--display); font-stretch: 80%; width: 24px; height: 24px; }
+.flow .step { font-size: var(--t-14); }
+th { font-size: 0.8125rem; }
+table { font-size: var(--t-14); }
+td.mono, td .mono, .kv .mono { font-size: 0.75rem; font-stretch: 87.5%; }
+main a { color: var(--accent-text); }
+td .pill { font-stretch: 87.5%; }
+td .pill.paid { color: var(--accent-text); }
+.notice { border-color: var(--accent-line); }
+.foot { font-size: var(--t-14); }
+@media (prefers-reduced-motion: reduce) {
+  .verdict.ACCEPT { animation: none; }
+  #try-btn:not(:disabled):hover, #try-btn:not(:disabled):active, button.ghost:not(:disabled):hover { transform: none; }
+}
+td .pill.local { color: var(--ink-2); border-color: var(--line-2); background: var(--bg-2); font-family: var(--sans); font-stretch: 100%; margin-left: 8px; white-space: nowrap; }
+#video > p { margin-bottom: var(--s-4); }

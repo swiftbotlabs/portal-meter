@@ -130,7 +130,11 @@ async function refreshContracts(d, md, sessions) {
       : [null, null];
     const known = (d.endpoints || []).find(x => x.id === i);
     const unit = sessions && ep.token.toLowerCase() === sessions.token.precompile.toLowerCase() ? sessions.token : md;
-    rows.push(`<tr><td>${i}</td><td class="mono">${esc(rec ? rec.uri : known ? known.path : '(third-party endpoint)')}</td><td>${formatUnits(ep.price, unit.decimals)} ${esc(unit.symbol)}</td>
+    const uri = rec ? rec.uri : known ? known.path : '(third-party endpoint)';
+    // endpoints 1 and 2 were registered by the escrow run against a seller on the developer's machine: their on-chain URL
+    // is kept as recorded, and labelled, so nobody takes it for a public service
+    const local = /^https?:\/\/(127\.|localhost|\[::1\])/i.test(uri);
+    rows.push(`<tr><td>${i}</td><td class="mono">${esc(uri)}${local ? ' <span class="pill local">local dev seller, escrow run</span>' : ''}</td><td>${formatUnits(ep.price, unit.decimals)} ${esc(unit.symbol)}</td>
       <td class="mono">${esc(short(ep.provider))}</td><td>${rep ? rep.served : '-'}</td><td>${rep ? rep.refunded : '-'}</td>
       <td>${rep ? rep.confirmed : '-'}</td><td>${rep ? rep.disputed : '-'}</td><td>${rep ? (rep.scoreBps / 100).toFixed(1) + ' %' : '-'}</td></tr>`);
   }
@@ -138,14 +142,14 @@ async function refreshContracts(d, md, sessions) {
 
   const logs = await evm.getLogs({ address: d.settlement, fromBlock: d.fromBlock, toBlock: 'latest' });
   const ev = [];
-  let paid = 0, served = 0, refunded = 0, volume = 0n;
+  let paid = 0, served = 0, refunded = 0, volume = 0n, paidIn = 0n, refundedOut = 0n;
   for (const l of logs) {
     let p;
     try { p = settlementIface.parseLog(l); } catch { continue; }
     if (!p) continue;
-    if (p.name === 'Paid') paid++;
+    if (p.name === 'Paid') { paid++; paidIn += p.args.amount; }
     if (p.name === 'Served') { served++; volume += p.args.amount; }
-    if (p.name === 'Refunded') refunded++;
+    if (p.name === 'Refunded') { refunded++; refundedOut += p.args.amount; }
     if (!['Paid', 'Served', 'Refunded'].includes(p.name)) continue;
     const detail = p.name === 'Paid' ? `payer ${short(p.args.payer)}` : p.name === 'Served' ? `payee ${short(p.args.payee)}, response ${short(p.args.responseHash)}`
       : `to ${short(p.args.payer)}, reason ${p.args.reason}, by ${p.args.byProvider ? 'provider' : 'payer'}`;
@@ -154,7 +158,11 @@ async function refreshContracts(d, md, sessions) {
       <td>${formatUnits(p.args.amount, md.decimals)}</td><td>${esc(detail)}</td><td class="mono">${esc(short(l.transactionHash))}</td></tr>`);
   }
   $('activity').tBodies[0].innerHTML = ev.length ? ev.reverse().slice(0, 60).join('') : '<tr><td colspan="6" class="muted">no activity yet</td></tr>';
-  $('totals').innerHTML = [['paid requests', paid], ['served', served], ['refunded', refunded], [`volume (${md.symbol})`, formatUnits(volume, md.decimals)]]
+  // three amounts, one scope: what was paid into escrow splits into what providers settled and what went back to payers
+  const sym = md.symbol;
+  $('totals').innerHTML = [['paid requests', paid], ['served', served], ['refunded', refunded],
+    [`paid into escrow (${sym})`, formatUnits(paidIn, md.decimals)], [`settled to providers (${sym})`, formatUnits(volume, md.decimals)],
+    [`refunded to payers (${sym})`, formatUnits(refundedOut, md.decimals)]]
     .map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('');
   return reg;
 }

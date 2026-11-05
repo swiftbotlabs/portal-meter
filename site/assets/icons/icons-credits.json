@@ -1,0 +1,86 @@
+[
+  {
+    "file": "bun.svg",
+    "icon": "logos:bun",
+    "name": "Bun",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://bun.sh/"
+  },
+  {
+    "file": "cloudflare-workers.svg",
+    "icon": "logos:cloudflare-workers-icon",
+    "name": "Cloudflare Workers",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://workers.cloudflare.com/"
+  },
+  {
+    "file": "deno.svg",
+    "icon": "logos:deno",
+    "name": "Deno",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://deno.land/"
+  },
+  {
+    "file": "ethereum.svg",
+    "icon": "logos:ethereum",
+    "name": "Ethereum",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://www.ethereum.org/"
+  },
+  {
+    "file": "express.svg",
+    "icon": "logos:express",
+    "name": "Express",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://expressjs.com/"
+  },
+  {
+    "file": "nodejs.svg",
+    "icon": "logos:nodejs-icon",
+    "name": "Node.js",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://nodejs.org/"
+  },
+  {
+    "file": "solidity.svg",
+    "icon": "logos:solidity",
+    "name": "Solidity",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://soliditylang.org/"
+  }
+]
