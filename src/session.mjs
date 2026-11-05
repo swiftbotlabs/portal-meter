@@ -142,7 +142,7 @@ export function verifyLog(session, rows, redemptions) {
   let heads = null;
   try {
     heads = replayLog(session, rows);
-    checks.push({ name: 'log replays from the session genesis', ok: true, detail: `${rows.length} requests` });
+    checks.push({ name: 'log replays from the session genesis', ok: true, detail: `${rows.length} request${rows.length === 1 ? '' : 's'}` });
   } catch (e) {
     checks.push({ name: 'log replays from the session genesis', ok: false, detail: e.message });
     return { ok: false, checks };

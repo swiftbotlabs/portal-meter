@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg font-family="Noto Sans, DejaVu Sans, sans-serif" xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640">
+  <rect width="1000" height="640" fill="#ffffff"/>
+  <!-- title -->
+  <text x="48" y="74" font-size="40" font-weight="700" fill="#0b0b0b">Storage deposit locked for good, per request</text>
+  <text x="48" y="116" font-size="27" fill="#52514e">Portaldot V3 testnet, tPOT, measured with our own keys</text>
+
+  <!-- plot: x from 48 to 952 (904 px) = 0..10 tPOT -->
+  <g stroke="#e4e3df" stroke-width="2">
+    <line x1="228.8" y1="160" x2="228.8" y2="452"/>
+    <line x1="409.6" y1="160" x2="409.6" y2="452"/>
+    <line x1="590.4" y1="160" x2="590.4" y2="452"/>
+    <line x1="771.2" y1="160" x2="771.2" y2="452"/>
+    <line x1="952" y1="160" x2="952" y2="452"/>
+  </g>
+  <line x1="48" y1="160" x2="48" y2="452" stroke="#b9b8b2" stroke-width="2"/>
+
+  <!-- row 1: escrow, 7.53 -> 680.7 px -->
+  <text x="60" y="196" font-size="29" font-weight="600" fill="#0b0b0b">Pay on-chain for each request (escrow)</text>
+  <path d="M48 214 H724.7 a4 4 0 0 1 4 4 V264 a4 4 0 0 1 -4 4 H48 Z" fill="#eb6834"/>
+  <text x="742" y="252" font-size="34" font-weight="700" fill="#0b0b0b">7.53 tPOT</text>
+
+  <!-- row 2: session, 0.076 -> 6.9 px -->
+  <text x="60" y="336" font-size="29" font-weight="600" fill="#0b0b0b">Prepaid session (100 requests, 1 batch)</text>
+  <path d="M48 354 H50.9 a4 4 0 0 1 4 4 V404 a4 4 0 0 1 -4 4 H48 Z" fill="#2a78d6"/>
+  <text x="72" y="392" font-size="34" font-weight="700" fill="#0b0b0b">0.076 tPOT</text>
+  <text x="268" y="392" font-size="29" fill="#52514e">about 100 times less</text>
+
+  <!-- x axis -->
+  <g font-size="22" fill="#52514e" text-anchor="middle">
+    <text x="48" y="482" text-anchor="start">0</text>
+    <text x="228.8" y="482">2</text>
+    <text x="409.6" y="482">4</text>
+    <text x="590.4" y="482">6</text>
+    <text x="771.2" y="482">8</text>
+    <text x="952" y="482" text-anchor="end">10 tPOT</text>
+  </g>
+
+  <!-- source -->
+  <line x1="48" y1="512" x2="952" y2="512" stroke="#e4e3df" stroke-width="2"/>
+  <g font-size="20" fill="#52514e">
+    <text x="48" y="546">Per request: 7.70 locked at pay, 0.17 net back at settle (blocks 276657 to 276660).</text>
+    <text x="48" y="576">Session: 11.55 locked at open (block 282490), 3.68 for its ink! anchor (block 282559),</text>
+    <text x="48" y="606">7.67 back at close (block 297818). Source: deployments/proof/. Test tokens, no value.</text>
+  </g>
+</svg>

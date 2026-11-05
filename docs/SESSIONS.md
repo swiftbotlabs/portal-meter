@@ -80,7 +80,8 @@ the receipt, so a redeemed head is a signature, from the session key, over the r
 
 The seller publishes `GET /v1/session/{id}/log`: for each request its number, request hash, response hash and running total,
 no bodies. Anyone can replay the chain from `head[0]` and compare it with the `Redeemed` events and the ink! anchors
-(`verifyLog` in [`src/session.mjs`](../src/session.mjs); the live page has a button for it). A log that was edited, cut
+(`verifyLog` in [`src/session.mjs`](../src/session.mjs); `portal-meter session-verify <seller> --session s.json` on the command line; the
+live page has a button for it). A log that was edited, cut
 short or reordered no longer reaches the head that was signed. Editing the response of the very last redeemed request goes
 unnoticed until a later batch covers it, and the check names the range it covers.
 

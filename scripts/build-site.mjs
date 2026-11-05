@@ -15,7 +15,7 @@ for (const d of ['demo', 'src']) cpSync(join(ROOT, d), join(OUT, d), { recursive
 // the published deployment record only: resumable deploy state and local seller state stay on the machine
 for (const f of ['testnet.json', 'sessions.json', 'proof', 'receipts']) cpSync(join(ROOT, 'deployments', f), join(OUT, 'deployments', f), { recursive: true });
 mkdirSync(join(OUT, 'pitch'));
-for (const f of ['portal-meter-deck.pdf', 'architecture.svg', 'block-events.png', 'demo-page.png']) cpSync(join(ROOT, 'pitch', f), join(OUT, 'pitch', f));
+for (const f of ['portal-meter-deck.pdf', 'architecture.svg', 'block-events.png', 'demo-page.png', 'cost-per-request.png', 'cost-per-request.svg']) cpSync(join(ROOT, 'pitch', f), join(OUT, 'pitch', f));
 
 // plain text, so that a browser shows them instead of downloading them
 mkdirSync(join(OUT, 'read'));
@@ -49,6 +49,11 @@ for (let i = 0, n = 0; i < data.length; i += PART, n += 1) {
   parts.push(name);
 }
 rmSync(bundle);
+// the package itself, for `npm i <url>` when GitHub is out of reach: exactly what `npm pack` ships (package.json "files")
+const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+const tgz = `${pkg.name}-${pkg.version}.tgz`;
+execFileSync('npm', ['pack', '--ignore-scripts', '--silent', '--pack-destination', join(OUT, 'source')], { cwd: ROOT, stdio: ['ignore', 'ignore', 'inherit'] });
+if (!statSync(join(OUT, 'source', tgz)).isFile()) throw new Error(`npm pack did not write ${tgz}`);
 
 const head = git('rev-parse', '--short', 'HEAD').toString().trim();
 const count = git('rev-list', '--count', 'HEAD').toString().trim();
@@ -57,9 +62,10 @@ writeFileSync(join(OUT, 'index.html'), `<!doctype html><html lang="en"><head><me
 <title>Portal Meter</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;color:#141a2b;background:#fff}h1{margin:0}a{color:#e6007a}code{background:#eef1f7;padding:1px 5px;border-radius:4px}
 @media (prefers-color-scheme:dark){body{background:#0e111a;color:#e8ebf3}a{color:#ff4fa8}code{background:#1f2638}}</style></head><body>
 <h1>Portal Meter</h1><p>Sell any API per call on Portaldot V3, settled across both of its contract VMs. By Swift Bot Labs.</p>
+<p><img src="pitch/cost-per-request.png" alt="Storage deposit locked for good per request: 7.53 tPOT paying on-chain for each request, 0.076 tPOT in a prepaid session of 100 requests" style="width:100%;height:auto"></p><p>Measured on the testnet: paying on-chain for each request locked 7.53 tPOT for good, a prepaid session 0.076 per request. <a href="deployments/proof/session-measure.json">Data</a>.</p>
 <ul>${li('demo/', 'Live page: buy a real API call, no wallet')}${li('demo/portal-meter-demo.mp4', 'Demo video, 2:23')}${li('pitch/portal-meter-deck.pdf', 'Pitch deck, PDF')}${li('read/README.txt', 'README')}${li('read/SESSIONS.txt', 'Sessions: protocol, guarantees and limits')}${li('read/ARCHITECTURE.txt', 'Architecture')}${li('read/SECURITY.txt', 'Security')}${li('read/PORTALDOT_V3_NOTES.txt', 'Measured Portaldot V3 notes')}</ul>
 <h2>Reuse</h2><ul>${li('read/paid-indexer-README.txt', 'A second seller in a folder of its own: the paid indexer example')}${li('read/paid-indexer-RUN.txt', 'Its run on the testnet: clean install, register, two paid calls, one cross-VM settlement')}${li('read/paid-indexer-server.mjs.txt', 'Its seller, built on the published entry points only')}${li('read/settler.mjs.txt', 'createSettler: settlement for any seller')}</ul>
-<h2>Source</h2><ul>${li('source/portal-meter-src.tar.gz', `Source at ${head}, ${count} commits`)}${li('source/commit-history.txt', 'Commit history with dates and files')}${li('read/MeterSession.sol.txt', 'MeterSession.sol')}${li('read/MeterSettlement.sol.txt', 'MeterSettlement.sol')}${li('read/meter_registry.lib.rs.txt', 'MeterRegistry (ink!)')}${li('read/worker-index.mjs.txt', 'The hosted seller')}${li('read/meter.mjs.txt', 'The metering core')}</ul>
+<h2>Source</h2><ul>${li('source/portal-meter-src.tar.gz', `Source at ${head}, ${count} commits`)}${li(`source/${tgz}`, `The package, for <code>npm i https://portal-meter.swiftbotlab.workers.dev/source/${tgz}</code>`)}${li('source/commit-history.txt', 'Commit history with dates and files')}${li('read/MeterSession.sol.txt', 'MeterSession.sol')}${li('read/MeterSettlement.sol.txt', 'MeterSettlement.sol')}${li('read/meter_registry.lib.rs.txt', 'MeterRegistry (ink!)')}${li('read/worker-index.mjs.txt', 'The hosted seller')}${li('read/meter.mjs.txt', 'The metering core')}</ul>
 <p>Full git history as a bundle, in parts: ${parts.map(p => `<a href="source/${p}">${p.split('.').pop()}</a>`).join(' ')}. Join them with <code>cat portal-meter.bundle.part* &gt; portal-meter.bundle</code>, then <code>git clone portal-meter.bundle</code>.</p>
 <h2>Proof</h2><ul>${li('deployments/sessions.json', 'Sessions: contracts and transactions')}${li('deployments/testnet.json', 'Escrow: contracts and transactions')}${li('deployments/proof/session-measure.json', 'Measured costs')}${li('deployments/proof/session-negative-checks.json', 'Negative checks')}${li('.well-known/portal-meter', 'Seller catalog')}${li('health', 'Seller health')}</ul>
 </body></html>\n`);
