@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portal Meter · live on Portaldot V3 testnet</title>
   <meta name="description" content="Pay-per-request API settlement on Portaldot V3: Solidity escrow on the EVM, ink! provider registry on WASM. Live testnet state and a free receipt verifier.">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0b0e" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="../assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/jbmono-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../assets/site.css">
   <link rel="stylesheet" href="style.css">
   <script>document.documentElement.classList.add('js')</script>
   <script type="importmap">
@@ -12,69 +18,106 @@
   </script>
 </head>
 <body>
-  <header class="top">
+  <header class="nav">
     <div class="wrap">
-      <div class="brand">
-        <span class="logo" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="28" height="28"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 16 L24 9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
-        </span>
-        <div>
-          <h1>Portal Meter</h1>
-          <p class="tag">Pay-per-request API settlement on Portaldot V3, across both of its VMs</p>
-        </div>
+      <a class="brand" href="../" aria-label="Portal Meter home">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 16 L23.5 9.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
+        <span class="brand-name">Portal Meter</span>
+      </a>
+      <nav class="nav-links" aria-label="Site">
+        <a href="../">Overview</a>
+        <a href="./" aria-current="page">Live page</a>
+        <a href="../#proof">Proof</a>
+        <a href="../#trust">Trust model</a>
+        <a href="../#docs">Docs</a>
+      </nav>
+      <div class="nav-end">
+        <div class="net" id="net"><span class="dot"></span><span id="net-text">connecting to PortaldotV3 testnet…</span></div>
       </div>
-      <div class="net" id="net"><span class="dot"></span><span id="net-text">connecting to PortaldotV3 testnet…</span></div>
     </div>
   </header>
 
-  <main class="wrap">
+  <main class="wrap demo">
     <section class="intro">
-      <p>An API provider lists an endpoint with a price. A client pays for <b>one request</b> in an ERC-20 (here a
-        Portaldot <b>native asset</b>, reached through the pallet-assets ERC-20 precompile). The payment waits in
-        escrow in a Solidity contract on Portaldot's EVM. The provider settles it once it has served the request,
-        or refunds it. An <b>ink!</b> registry on Portaldot's WASM VM keeps the provider's public record.
-        Everything on this page is read live from the testnet by your browser.</p>
-      <div class="flow" aria-label="request flow">
-        <div class="step"><b>1</b> GET → <code>402</code> quote</div>
-        <div class="step"><b>2</b> <code>pay()</code> on EVM</div>
-        <div class="step"><b>3</b> retry with signed proof</div>
-        <div class="step"><b>4</b> served once + receipt</div>
-        <div class="step"><b>5</b> <code>settle</code> + ink! <code>record</code>, one tx</div>
-      </div>
-      <p class="muted" style="margin-top:10px">That is the escrow path, for calls worth a few cents or more. High-frequency APIs use a
-        prepaid session: one budget, a signed voucher per request, many requests settled in one transaction.</p>
-    </section>
-
-    <section class="card" id="try">
-      <h2>Buy a real API call from this page</h2>
-      <p class="muted">No wallet, no install. A public test key in this page signs a voucher against a capped prepaid session, the
+      <span class="eyebrow">Live demo<span class="hide-sm"> · PortaldotV3 testnet</span> · test tokens only</span>
+      <h1>Buy a real API call from this page.</h1>
+      <p class="lead">No wallet, no install. A public test key in this page signs a voucher against a capped prepaid session, the
         hosted seller checks it and answers. Nothing goes on-chain per request: the seller settles many requests in one
         transaction, in Solidity and ink! together, and each batch carries a signature from the session key over the requests
         made and the responses received. Test tokens only.</p>
-      <div class="row try-row">
-        <select id="try-kind" aria-label="endpoint"><option value="asset">/v1/asset/</option><option value="account">/v1/account/</option></select>
-        <input id="try-arg" value="7777" maxlength="64" spellcheck="false" aria-label="asset id or address">
-        <button id="try-btn" type="button" disabled>Buy one request</button>
+    </section>
+
+    <section class="card try" id="try">
+      <div class="try-main">
+        <div class="try-head">
+          <h2>Buy one request</h2>
+          <span class="price mono">0.01 pUSD per call · endpoint 3</span>
+        </div>
+        <div class="row try-row">
+          <select id="try-kind" aria-label="endpoint"><option value="asset">/v1/asset/</option><option value="account">/v1/account/</option></select>
+          <input id="try-arg" value="7777" maxlength="64" spellcheck="false" aria-label="asset id or address">
+          <button id="try-btn" type="button" disabled>Buy one request</button>
+        </div>
+        <ul class="checks" id="try-steps" aria-live="polite"></ul>
+        <pre id="try-body" class="body waiting"></pre>
+        <ol class="howto">
+          <li><b>HTTP 402.</b> The seller quotes 0.01 pUSD for endpoint 3.</li>
+          <li><b>A voucher, signed here.</b> Your browser signs it with the page's public test key: no gas, no wallet.</li>
+          <li><b>HTTP 200.</b> The data arrives with a provider-signed receipt, and its hash is checked.</li>
+          <li><b>Settled later, in bulk.</b> The seller redeems this request with many others in one Ethereum transaction, listed in the batches table.</li>
+        </ol>
       </div>
-      <ul class="checks" id="try-steps" aria-live="polite"></ul>
-      <pre id="try-body" class="body" hidden></pre>
-      <div class="totals" id="try-stats"></div>
-      <div class="table-scroll"><table id="try-batches"><thead><tr><th>block</th><th>requests settled</th><th>sessions</th><th>one Ethereum tx</th></tr></thead>
-        <tbody><tr><td colspan="4" class="muted">loading…</td></tr></tbody></table></div>
-      <div class="row"><button id="try-verify" type="button" class="ghost">Replay the session log against the chain</button></div>
-      <div id="try-verdict" aria-live="polite"></div>
-      <h3 class="sub">What one request costs on-chain</h3>
-      <div class="table-scroll"><table><thead><tr><th></th><th>per-request escrow</th><th>prepaid session</th></tr></thead><tbody>
-        <tr><td>transactions per request</td><td>2</td><td><b>0</b></td></tr>
-        <tr><td>locked for good per request</td><td>7.53 tPOT</td><td><b>0.076 tPOT</b>, in a 100-request session</td></tr>
-        <tr><td>100 requests</td><td>about 753 tPOT</td><td><b>7.6 tPOT</b></td></tr>
-      </tbody></table></div>
-      <p class="muted">Measured on this testnet with our own keys, blocks 276657 to 276660 and <a href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">282559</a>. Test tokens have no value; the ratio is the point.</p>
+      <div class="try-side">
+        <h3 class="side-h">The public session, live from the seller</h3>
+        <div class="totals" id="try-stats"></div>
+        <div class="table-scroll"><table id="try-batches"><thead><tr><th>block</th><th>requests settled</th><th>sessions</th><th>one Ethereum tx</th></tr></thead>
+          <tbody><tr><td colspan="4" class="muted">loading…</td></tr></tbody></table></div>
+        <div class="try-cost">
+          <h3 class="sub">What one request costs on-chain</h3>
+          <div class="table-scroll"><table class="cost"><thead><tr><th></th><th>per-request escrow</th><th>prepaid session</th></tr></thead><tbody>
+            <tr><td>transactions per request</td><td>2</td><td><b>0</b></td></tr>
+            <tr><td>locked for good per request</td><td>7.53 tPOT</td><td><b>0.076 tPOT</b>, in a 100-request session</td></tr>
+            <tr><td>100 requests</td><td>about 753 tPOT</td><td><b>7.6 tPOT</b></td></tr>
+          </tbody></table></div>
+          <p class="muted small">Measured on this testnet with our own keys, blocks 276657 to 276660 and <a href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">282559</a>. Test tokens have no value; the ratio is the point.</p>
+        </div>
+      </div>
+      <div class="try-replay">
+        <div class="replay-head">
+          <div>
+            <h3 class="side-h">Check it against the chain</h3>
+            <p class="muted small">Replays the seller's public log of this session against the payer-signed head in each <code>Redeemed</code> event on the EVM and its ink! anchor on the WASM VM.</p>
+          </div>
+          <button id="try-verify" type="button" class="ghost">Replay the session log against the chain</button>
+        </div>
+        <div id="try-verdict" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="card explain">
+      <div class="explain-text">
+        <span class="eyebrow">Two ways to pay</span>
+        <h2>Per-request escrow, and prepaid sessions</h2>
+        <p>An API provider lists an endpoint with a price. A client pays for <b>one request</b> in an ERC-20 (here a
+          Portaldot <b>native asset</b>, reached through the pallet-assets ERC-20 precompile). The payment waits in
+          escrow in a Solidity contract on Portaldot's EVM. The provider settles it once it has served the request,
+          or refunds it. An <b>ink!</b> registry on Portaldot's WASM VM keeps the provider's public record.
+          Everything on this page is read live from the testnet by your browser.</p>
+      </div>
+      <ol class="flow" aria-label="request flow">
+        <li class="step"><b>1</b><span>GET, then a <code>402</code> quote</span></li>
+        <li class="step"><b>2</b><span><code>pay()</code> on EVM</span></li>
+        <li class="step"><b>3</b><span>retry with signed proof</span></li>
+        <li class="step"><b>4</b><span>served once + receipt</span></li>
+        <li class="step"><b>5</b><span><code>settle</code> + ink! <code>record</code>, one tx</span></li>
+      </ol>
+      <p class="muted">That is the escrow path, for calls worth a few cents or more. High-frequency APIs use a
+        prepaid session: one budget, a signed voucher per request, many requests settled in one transaction.</p>
     </section>
 
     <section class="card" id="video">
       <h2>Demo video</h2>
-      <video controls preload="none" poster="video-poster.jpg" width="1920" height="1080" style="width:100%;height:auto;border-radius:8px" src="portal-meter-demo.mp4"></video>
+      <video controls preload="none" poster="video-poster.jpg" width="1920" height="1080" src="portal-meter-demo.mp4"></video>
     </section>
 
     <section id="pending" class="card notice" hidden></section>
@@ -138,9 +181,11 @@
     </section>
   </main>
 
-  <footer class="wrap foot">
-    <p>Portal Meter by Swift Bot Labs · <a href="../">source, docs and proof</a> (MIT) ·
-      chain data from <code>test-evm-rpc-v3.portaldot.dev</code> and <code>test-node-v3.portaldot.dev</code></p>
+  <footer class="foot">
+    <div class="wrap">
+      <p>Portal Meter by Swift Bot Labs · <a class="link" href="../">source, docs and proof</a> (MIT) ·
+        chain data from <code>test-evm-rpc-v3.portaldot.dev</code> and <code>test-node-v3.portaldot.dev</code></p>
+    </div>
   </footer>
   <script type="module" src="app.js"></script>
 </body>

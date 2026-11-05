@@ -57,17 +57,27 @@ if (!statSync(join(OUT, 'source', tgz)).isFile()) throw new Error(`npm pack did 
 
 const head = git('rev-parse', '--short', 'HEAD').toString().trim();
 const count = git('rev-list', '--count', 'HEAD').toString().trim();
-const li = (href, text) => `<li><a href="${href}">${text}</a></li>`;
-writeFileSync(join(OUT, 'index.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Portal Meter</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;color:#141a2b;background:#fff}h1{margin:0}a{color:#e6007a}code{background:#eef1f7;padding:1px 5px;border-radius:4px}
-@media (prefers-color-scheme:dark){body{background:#0e111a;color:#e8ebf3}a{color:#ff4fa8}code{background:#1f2638}}</style></head><body>
-<h1>Portal Meter</h1><p>Sell any API per call on Portaldot V3, settled across both of its contract VMs. By Swift Bot Labs.</p>
-<p><img src="pitch/cost-per-request.png" width="2000" height="1280" alt="Storage deposit locked for good per request: 7.53 tPOT paying on-chain for each request, 0.076 tPOT in a prepaid session of 100 requests" style="width:100%;height:auto"></p><p>Measured on the testnet: paying on-chain for each request locked 7.53 tPOT for good, a prepaid session 0.076 per request. <a href="deployments/proof/session-measure.json">Data</a>.</p>
-<ul>${li('demo/', 'Live page: buy a real API call, no wallet')}${li('demo/portal-meter-demo.mp4', 'Demo video, 2:23')}${li('pitch/portal-meter-deck.pdf', 'Pitch deck, PDF')}${li('read/README.txt', 'README')}${li('read/SESSIONS.txt', 'Sessions: protocol, guarantees and limits')}${li('read/ARCHITECTURE.txt', 'Architecture')}${li('read/SECURITY.txt', 'Security')}${li('read/PORTALDOT_V3_NOTES.txt', 'Measured Portaldot V3 notes')}</ul>
-<h2>Reuse</h2><ul>${li('read/paid-indexer-README.txt', 'A second seller in a folder of its own: the paid indexer example')}${li('read/paid-indexer-RUN.txt', 'Its run on the testnet: clean install, register, two paid calls, one cross-VM settlement')}${li('read/paid-indexer-server.mjs.txt', 'Its seller, built on the published entry points only')}${li('read/settler.mjs.txt', 'createSettler: settlement for any seller')}</ul>
-<h2>Source</h2><ul>${li('source/portal-meter-src.tar.gz', `Source at ${head}, ${count} commits`)}${li(`source/${tgz}`, `The package, for <code>npm i https://portal-meter.swiftbotlab.workers.dev/source/${tgz}</code>`)}${li('source/commit-history.txt', 'Commit history with dates and files')}${li('read/MeterSession.sol.txt', 'MeterSession.sol')}${li('read/MeterSettlement.sol.txt', 'MeterSettlement.sol')}${li('read/meter_registry.lib.rs.txt', 'MeterRegistry (ink!)')}${li('read/worker-index.mjs.txt', 'The hosted seller')}${li('read/meter.mjs.txt', 'The metering core')}</ul>
-<p>Full git history as a bundle, in parts: ${parts.map(p => `<a href="source/${p}">${p.split('.').pop()}</a>`).join(' ')}. Join them with <code>cat portal-meter.bundle.part* &gt; portal-meter.bundle</code>, then <code>git clone portal-meter.bundle</code>.</p>
-<h2>Proof</h2><ul>${li('deployments/sessions.json', 'Sessions: contracts and transactions')}${li('deployments/testnet.json', 'Escrow: contracts and transactions')}${li('deployments/proof/session-measure.json', 'Measured costs')}${li('deployments/proof/session-negative-checks.json', 'Negative checks')}${li('.well-known/portal-meter', 'Seller catalog')}${li('health', 'Seller health')}</ul>
-</body></html>\n`);
+// the landing page: site/index.html is the template, site/assets its styles, script, fonts and icon
+cpSync(join(ROOT, 'site', 'assets'), join(OUT, 'assets'), { recursive: true });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// the seller's health at publish time, so the page carries a real number without JavaScript; the page script reads it live
+let health = 'Seller health: requests settled so far, read live from <a class="link" href="health">health</a>.';
+try {
+  const h = await fetch('https://portal-meter.swiftbotlab.workers.dev/health', { signal: AbortSignal.timeout(10_000) }).then(r => (r.ok ? r.json() : null));
+  if (h && Number.isInteger(h.requestsSettled) && Number.isInteger(h.batches) && Number.isInteger(h.requestsWaitingForSettlement)) {
+    const at = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    health = `At publish, ${at} UTC: <b>${h.requestsSettled}</b> requests settled in <b>${h.batches}</b> transactions, <b>${h.requestsWaitingForSettlement}</b> waiting for the next batch. <a class="link" href="health">health</a>`;
+  }
+} catch { /* offline build: keep the plain line */ }
+const vars = {
+  HEAD: esc(head), COUNT: esc(count), TGZ: esc(tgz), HEALTH: health,
+  PARTS: parts.map(p => `<a href="source/${esc(p)}">${esc(p.split('.').pop())}</a>`).join(' '),
+};
+let page = readFileSync(join(ROOT, 'site', 'index.html'), 'utf8');
+page = page.replace(/\{\{([A-Z]+)\}\}/g, (m, k) => {
+  if (!(k in vars)) throw new Error(`site/index.html: unknown placeholder ${m}`);
+  return vars[k];
+});
+writeFileSync(join(OUT, 'index.html'), page);
 const size = dir => readdirSync(dir).reduce((n, f) => { const p = join(dir, f); const s = statSync(p); return n + (s.isDirectory() ? size(p) : s.size); }, 0);
 console.log(`worker/public: ${(size(OUT) / 1e6).toFixed(1)} MB, head ${head}, ${count} commits, ${parts.length} bundle parts`);

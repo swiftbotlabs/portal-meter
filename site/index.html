@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal Meter · pay-per-call APIs on Portaldot</title>
+<meta name="description" content="If you run an API, Portal Meter lets AI agents pay you a cent per call on Portaldot, and you settle more than a hundred calls in one transaction instead of paying a fee on each one.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0b0e" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Portal Meter">
+<meta property="og:description" content="A cent per API call, a hundred calls per transaction. Prepaid sessions on Portaldot V3, settled in Solidity and ink! together.">
+<meta property="og:image" content="https://portal-meter.swiftbotlab.workers.dev/pitch/cost-per-request.png">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jbmono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/landing.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M17 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5.5v13M15 5.5v13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" fill="none" stroke="currentColor" stroke-width="1.75"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.5v5.5c0 4.2-2.9 7.7-7 9-4.1-1.3-7-4.8-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12 7.5v5.5M12 16.2v.3" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5A.5.5 0 0 1 6.5 20V4a.5.5 0 0 1 .5-.5z M14 3.5V8h4M9.5 12.5h5M9.5 16h5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-block" viewBox="0 0 24 24"><path d="M12 3.5l7.5 4.25v8.5L12 20.5l-7.5-4.25v-8.5z M4.5 7.75L12 12l7.5-4.25M12 12v8.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 4l8.5 4.5L12 13 3.5 8.5z M3.5 12.5L12 17l8.5-4.5 M3.5 16.5L12 21l8.5-4.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.5 0-2.5.8-2.5 1.9 0 2.6 5 1.4 5 4.1 0 1.1-1 2-2.5 2-1.2 0-2.1-.5-2.6-1.3M12 6.5V8M12 16v1.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.5 16.5a8 8 0 1 1 15 0" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M12 14l4-4.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="12" cy="14.5" r="1.4" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Portal Meter home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 16 L23.5 9.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
+      Portal Meter
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#cost">The cost</a>
+      <a href="#how">How it works</a>
+      <a href="#proof">Proof</a>
+      <a href="#trust">Trust model</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="#docs">Docs</a>
+    </nav>
+    <div class="nav-end">
+      <a class="btn btn-primary btn-sm" href="demo/">Try it live</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============================================================ hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="pill"><span class="dot ok"></span>Live on the Portaldot V3 testnet</span>
+        <h1>A cent per API call.<br><span class="h1-2">A hundred calls per transaction.</span></h1>
+        <p class="lead">If you run an API, Portal Meter lets AI agents pay you a cent per call on Portaldot, and you settle more than a hundred calls in one transaction instead of paying a fee on each one.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="demo/">Buy a real API call <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-secondary" href="https://youtu.be/sgGdQ-WLum0" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch the demo, 2:23</a>
+        </div>
+        <ul class="hero-facts">
+          <li><b>No wallet</b> needed to try it</li>
+          <li><b>Solidity and ink!</b> in one transaction</li>
+          <li><b>123 tests</b>, MIT licensed</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual">
+        <figure class="meter card" id="meter" aria-labelledby="meter-cap">
+          <div class="meter-head">
+            <div class="meter-title">
+              <span class="eyebrow">Hosted seller<span class="hide-sm"> · endpoint 3</span></span>
+              <span class="mono meter-route">GET /v1/…, paid per call</span>
+            </div>
+            <span class="meter-price mono">0.01 pUSD<span class="hide-sm"> / call</span></span>
+            <button class="icon-btn js-only" id="meter-toggle" type="button" aria-label="Pause the replay" aria-pressed="false"><svg class="i-pause" aria-hidden="true"><use href="#i-pause"/></svg></button>
+          </div>
+
+          <div class="meter-feed" aria-hidden="true">
+            <ol id="meter-feed">
+              <li style="--i:0"><span class="mono fn">voucher 20</span><span class="mono fs">0x8ccb…0b37</span><span class="steps"><i>402</i><i>signed</i><i class="ok">200</i></span></li>
+              <li style="--i:1"><span class="mono fn">voucher 100</span><span class="mono fs">0x58bb…8bc2</span><span class="steps"><i>402</i><i>signed</i><i class="ok">200</i></span></li>
+              <li style="--i:2"><span class="mono fn">voucher 80</span><span class="mono fs">0x08de…94c9</span><span class="steps"><i>402</i><i>signed</i><i class="ok">200</i></span></li>
+              <li style="--i:3"><span class="mono fn">voucher 99</span><span class="mono fs">0x58bb…8bc2</span><span class="steps"><i>402</i><i>signed</i><i class="ok">200</i></span></li>
+            </ol>
+          </div>
+
+          <div class="meter-lanes">
+            <div class="lane" data-total="17" style="--p:1"><span class="mono ls">0x08de…94c9</span><span class="lb"><span></span></span><span class="mono ln num"><b>17</b> / 17</span></div>
+            <div class="lane" data-total="100" style="--p:1"><span class="mono ls">0x58bb…8bc2</span><span class="lb"><span></span></span><span class="mono ln num"><b>100</b> / 100</span></div>
+            <div class="lane" data-total="20" style="--p:1"><span class="mono ls">0x8ccb…0b37</span><span class="lb"><span></span></span><span class="mono ln num"><b>20</b> / 20</span></div>
+          </div>
+
+          <div class="meter-total">
+            <span class="mt-label" id="meter-state">The batch of block 282559</span>
+            <span class="mono num mt-value"><b id="meter-count">137</b> requests · <b id="meter-sum">1.37</b> pUSD</span>
+          </div>
+
+          <a class="meter-settle is-on" id="meter-settle" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">
+            <span class="ms-icon"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>
+            <span class="ms-text"><b>Settled in one Ethereum transaction</b><span>block 282559 · Solidity redeem + ink! record, 3 sessions</span></span>
+            <span class="mono ms-tx">0xe503…7f09</span>
+          </a>
+          <figcaption id="meter-cap" class="meter-cap">Replay of a real batch, sped up: block 282559 settled these 137 requests from 3 sessions in one transaction. The order of the calls is illustrative.</figcaption>
+        </figure>
+        <p class="live-line"><span class="dot ok"></span><span id="live-health">{{HEALTH}}</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ cost -->
+  <section class="section" id="cost">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">The measured problem</span>
+        <h2>Paying on-chain for each call locked 7.53 tPOT for good. A session locks 0.076 per call.</h2>
+        <p>On Portaldot every new storage slot locks a deposit. One paid request left 7.53 tPOT locked against a price of 0.025 test dollars: fine for a call worth a few cents, fatal for one worth a fraction of a cent. So we built prepaid sessions.</p>
+      </div>
+
+      <div class="cost-grid">
+        <figure class="chart card" id="chart" aria-labelledby="chart-title">
+          <div class="chart-head">
+            <h3 id="chart-title">Storage deposit locked for good, per request</h3>
+            <span class="muted">tPOT · Portaldot V3 testnet · measured with our own keys</span>
+          </div>
+          <div class="chart-plot">
+            <div class="gridlines" aria-hidden="true"><i style="--x:0"></i><i style="--x:20"></i><i style="--x:40"></i><i style="--x:60"></i><i style="--x:80"></i><i style="--x:100"></i></div>
+            <div class="bar-row">
+              <div class="bar-label">Pay on-chain for each request <span class="muted">(escrow)</span></div>
+              <div class="bar-track"><span class="bar bar-escrow" style="--v:75.3"></span></div><span class="bar-value num" style="--v:75.3">7.53 tPOT</span>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Prepaid session <span class="muted">(100 requests, 1 batch)</span></div>
+              <div class="bar-track"><span class="bar bar-session" style="--v:0.76"></span></div><span class="bar-value num accent" style="--v:0.76">0.076 tPOT <span class="muted">about 100 times less</span></span>
+            </div>
+            <div class="axis num" aria-hidden="true"><span style="--x:0">0</span><span style="--x:20">2</span><span style="--x:40">4</span><span style="--x:60">6</span><span style="--x:80">8</span><span style="--x:100">10 tPOT</span></div>
+          </div>
+          <figcaption class="chart-note">Per request: 7.70 locked at pay, 0.17 back at settle (blocks 276657 to 276660). Session of 100 requests: 11.55 locked at open (block 282490), 3.68 for its ink! anchor (block 282559), 7.67 back at close (block 297818). <a class="link" href="deployments/proof/session-measure.json">Data</a>. Test tokens have no value; the ratio is the point.</figcaption>
+        </figure>
+
+        <div class="cost-stats">
+          <div class="stat card"><span class="eyebrow">Transactions per request</span><span class="stat-v num"><span class="old">2</span><span class="sr-only">down to</span><svg aria-hidden="true"><use href="#i-arrow"/></svg>0</span><span class="muted">escrow vs prepaid session</span></div>
+          <div class="stat card"><span class="eyebrow">Locked for 100 requests</span><span class="stat-v num"><span class="old">753</span><span class="sr-only">down to</span><svg aria-hidden="true"><use href="#i-arrow"/></svg>7.6 <small>tPOT</small></span><span class="muted">about 753 tPOT through escrow</span></div>
+          <div class="stat card"><span class="eyebrow">Requests in one transaction</span><span class="stat-v num">137</span><span class="muted">from 3 sessions, <a class="link" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">block 282559</a></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ how -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">How a session works</span>
+        <h2>Open once. Pay every call with a signature. Settle many in one transaction.</h2>
+        <p>No transaction per request, and no trust in the seller's word: every batch it redeems carries the buyer's own signature over the requests made and the responses received.</p>
+      </div>
+      <ol class="steps">
+        <li class="step card">
+          <div class="step-n mono">01</div>
+          <h3>Open a session once</h3>
+          <p>The payer locks a budget in <code>MeterSession</code>. It can name a fresh session key, so an agent holds a key that can spend this budget and nothing else.</p>
+          <div class="step-vis term step-vis-first" aria-label="Terminal output">
+            <div class="tl"><span class="tp">$</span> npx portal-meter session-open 3 --budget 0.25 --days 1</div>
+            <div class="tl to">session 0xbf59f966…78ab: budget 0.25, tx 0xc7dcc4a5…06c6, block 329592</div>
+          </div>
+          <dl class="step-kv">
+            <div><dt>budget</dt><dd>0.25 pUSD, locked in <code>MeterSession</code></dd></div>
+            <div><dt>key</dt><dd>a fresh session key that spends this budget only</dd></div>
+            <div><dt>expiry</dt><dd>1 day; unspent budget back at <code>close</code></dd></div>
+          </dl>
+        </li>
+        <li class="step card">
+          <div class="step-n mono">02</div>
+          <h3>Every call is a signed voucher</h3>
+          <p>HTTP 402 with a price, a voucher signed by the client, HTTP 200 with the data. Each voucher commits to the hash of the previous response.</p>
+          <div class="step-vis http" aria-label="HTTP exchange">
+            <div class="hx"><span class="mono">GET /v1/asset/7777</span><span class="code c402 mono">402</span><span class="mono muted">0.01 pUSD</span></div>
+            <div class="hx"><span class="mono">voucher 1, signed</span><span class="code csig mono">sig</span><span class="mono muted">no gas</span></div>
+            <div class="hx"><span class="mono">GET + voucher</span><span class="code c200 mono">200</span><span class="mono muted">data + receipt</span></div>
+            <div class="hx formula mono">head[n] = keccak256(head[n-1], request[n], response[n-1])</div>
+          </div>
+        </li>
+        <li class="step card">
+          <div class="step-n mono">03</div>
+          <h3>One transaction settles many</h3>
+          <p>One Ethereum transaction carries <code>utility.batchAll</code>: the money moves in Solidity and the public record lands in ink!, together or not at all, for many sessions at once.</p>
+          <div class="step-vis tx" aria-label="One transaction across both VMs">
+            <div class="tx-head mono"><span>1 Ethereum tx</span><span class="muted">utility.batchAll</span></div>
+            <div class="tx-lane"><span class="vm mono">EVM</span><span><b>MeterSession.redeem</b><span class="muted">pallet-revive · the money</span></span></div>
+            <div class="tx-lane"><span class="vm mono vm-ink">WASM</span><span><b>MeterRegistry.record</b><span class="muted">pallet-contracts · the public record</span></span></div>
+            <div class="tx-foot mono muted">× each session in the batch</div>
+          </div>
+        </li>
+      </ol>
+
+      <div class="why">
+        <div class="why-item">
+          <svg class="ico" aria-hidden="true"><use href="#i-layers"/></svg>
+          <h3>Both VMs, one transaction</h3>
+          <p>An Ethereum-signed transaction to the runtime pallets address dispatches <code>revive.call</code> and <code>contracts.call</code> together. A single-VM chain would need a bridge or a second transaction.</p>
+        </div>
+        <div class="why-item">
+          <svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg>
+          <h3>Native assets are ERC-20s</h3>
+          <p>Every <code>pallet-assets</code> token is reachable from Solidity at a precompile address. The hosted seller is priced in pUSD, asset 7777, Portaldot's own test dollar.</p>
+        </div>
+        <div class="why-item">
+          <svg class="ico" aria-hidden="true"><use href="#i-gauge"/></svg>
+          <h3>Built around storage deposits</h3>
+          <p>Designed from measured numbers, and published for other builders as <a class="link" href="read/PORTALDOT_V3_NOTES.txt">Portaldot V3 notes</a>. For calls worth more, per-request escrow is there too.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ proof -->
+  <section class="section" id="proof">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Live proof</span>
+        <h2>Receipts you can open on the explorer.</h2>
+        <p>Open any block on the Portaldot explorer, or replay the public session log against the chain from the <a class="link" href="demo/">live page</a>.</p>
+      </div>
+
+      <div class="receipts">
+        <article class="receipt card feature">
+          <div class="r-top"><span class="eyebrow">Sessions settled</span><span class="badge ok">success</span></div>
+          <a class="r-block" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">Block 282559 <svg class="ico" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <p>137 requests from 3 sessions in one Ethereum transaction: <code>assets.Transferred</code>, <code>revive.ContractEmitted</code>, <code>contracts.Called</code> and <code>utility.BatchCompleted</code> inside one extrinsic.</p>
+          <div class="hash"><span class="h">0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09</span><button class="icon-btn js-only" type="button" data-copy="0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09" aria-label="Copy transaction hash"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+        </article>
+        <article class="receipt card">
+          <div class="r-top"><span class="eyebrow">Unattended batch</span><span class="badge">cron</span></div>
+          <a class="r-block" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282470?tab=events" target="_blank" rel="noopener">Block 282470 <svg class="ico" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <p>Sent by the seller's own cron: 67 requests from 2 sessions.</p>
+          <div class="hash"><span class="h">0xe388295c45e60931abadb2c8bc9d6b9dad805d4cea8b9cdfe6aeac729c3992db</span><button class="icon-btn js-only" type="button" data-copy="0xe388295c45e60931abadb2c8bc9d6b9dad805d4cea8b9cdfe6aeac729c3992db" aria-label="Copy transaction hash"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+        </article>
+        <article class="receipt card">
+          <div class="r-top"><span class="eyebrow">Quickstart batch</span><span class="badge">5 Nov</span></div>
+          <a class="r-block" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/329697?tab=events" target="_blank" rel="noopener">Block 329697 <svg class="ico" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <p>The five-line quickstart below, settled: redeem and ink! anchor in one transaction.</p>
+          <div class="hash"><span class="h">0x24aa5a1947432405911e0cd0bd2ce4f6e600901c6b2390eb91f5e8d89a18b770</span><button class="icon-btn js-only" type="button" data-copy="0x24aa5a1947432405911e0cd0bd2ce4f6e600901c6b2390eb91f5e8d89a18b770" aria-label="Copy transaction hash"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+        </article>
+        <article class="receipt card">
+          <div class="r-top"><span class="eyebrow">Endpoint registered</span><span class="badge">both VMs</span></div>
+          <a class="r-block" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282234?tab=events" target="_blank" rel="noopener">Block 282234 <svg class="ico" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <p>Endpoint 3 registered in Solidity and listed in ink!, one Ethereum transaction.</p>
+          <div class="hash"><span class="h">0xeca4784ca0ba03ce7f110cbdc9af984dc2956f8d881edb5577261fcd7fd27b2c</span><button class="icon-btn js-only" type="button" data-copy="0xeca4784ca0ba03ce7f110cbdc9af984dc2956f8d881edb5577261fcd7fd27b2c" aria-label="Copy transaction hash"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+        </article>
+        <article class="receipt card">
+          <div class="r-top"><span class="eyebrow">Escrow, served</span><span class="badge">settle + anchor</span></div>
+          <a class="r-block" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/276658?tab=events" target="_blank" rel="noopener">Block 276658 <svg class="ico" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <p>Paid into escrow, served once, settled with its ink! anchor in the same transaction.</p>
+          <div class="hash"><span class="h">0xf5264278d35ec75998992133da8fe8bc7bb8de5f7040137ba3353f1e7e0bacb6</span><button class="icon-btn js-only" type="button" data-copy="0xf5264278d35ec75998992133da8fe8bc7bb8de5f7040137ba3353f1e7e0bacb6" aria-label="Copy transaction hash"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+        </article>
+        <article class="receipt card">
+          <div class="r-top"><span class="eyebrow">Escrow, refunded</span><span class="badge">refund + anchor</span></div>
+          <a class="r-block" href="https://scanner-testnet-v3.portaldot.dev/#/blocks/276660?tab=events" target="_blank" rel="noopener">Block 276660 <svg class="ico" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <p>A refunded request, recorded in ink! in the same transaction.</p>
+          <div class="hash"><span class="h">0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314</span><button class="icon-btn js-only" type="button" data-copy="0x1a52029d1a3006600c7ad50c2424c18fefdf0df499505dd35e85c9d68a36f314" aria-label="Copy transaction hash"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+        </article>
+      </div>
+
+      <div class="proof-split">
+        <div class="card contracts">
+          <h3>Contracts on the PortaldotV3 testnet</h3>
+          <dl>
+            <div><dt>MeterSession <span class="muted">Solidity, EVM · block 282417</span></dt><dd class="hash"><span class="h">0xCc2aBc8AC1B5676e8f9678bb5B6881A0b743B3d5</span><button class="icon-btn js-only" type="button" data-copy="0xCc2aBc8AC1B5676e8f9678bb5B6881A0b743B3d5" aria-label="Copy address"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></dd></div>
+            <div><dt>MeterSettlement <span class="muted">Solidity, EVM · block 276611</span></dt><dd class="hash"><span class="h">0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e</span><button class="icon-btn js-only" type="button" data-copy="0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e" aria-label="Copy address"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></dd></div>
+            <div><dt>MeterRegistry <span class="muted">ink!, WASM · block 276655</span></dt><dd class="hash"><span class="h">5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4</span><button class="icon-btn js-only" type="button" data-copy="5DHgN8JZRpyo9mDaG1BSNh224AZXcQw8p3Y8GZK1K2Vd8Ku4" aria-label="Copy address"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></dd></div>
+            <div><dt>pUSD <span class="muted">asset 7777 as ERC-20</span></dt><dd class="hash"><span class="h">0x00001e6100000000000000000000000000010000</span><button class="icon-btn js-only" type="button" data-copy="0x00001e6100000000000000000000000000010000" aria-label="Copy address"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></dd></div>
+          </dl>
+        </div>
+        <div class="card checks-card">
+          <h3>Checked, not claimed</h3>
+          <ul class="ticks">
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Log replay: ACCEPT.</b> The seller's public log against the payer-signed head in the <code>Redeemed</code> event and the ink! anchor. <a class="link" href="demo/">Run it yourself</a>.</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>22 of 22 bad vouchers refused</b> by the live seller and contract. <a class="link" href="deployments/proof/session-negative-checks.json">Negative checks</a>.</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Source matches the chain.</b> Bytematch, another Hacker House team's verifier, lists all 3 Solidity contracts we deployed as byte-for-byte matches. <a class="link" href="https://bytematch-portaldot.vercel.app/repo/swiftbotlabs/portal-meter" target="_blank" rel="noopener">Bytematch</a>.</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>123 tests:</b> 42 Solidity (unit, fuzz, invariant), 73 Node, 8 ink!.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ trust -->
+  <section class="section" id="trust">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Trust model</span>
+        <h2>What each side can and cannot do.</h2>
+        <p>"Contract" means the deployed <code>MeterSession</code>, <code>MeterSettlement</code> and <code>MeterRegistry</code>. Off-chain parts are named as off-chain.</p>
+      </div>
+      <div class="trust">
+        <div class="card trust-card">
+          <h3>A malicious seller</h3>
+          <div class="tc-group">
+            <span class="tc-label cannot"><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg>Cannot, enforced by the contract</span>
+            <ul>
+              <li>Take more than the buyer's session key signed: <code>redeem</code> checks the signature, caps the total at the budget and accepts only newer vouchers.</li>
+              <li>Touch the unspent budget: only the payer may <code>close</code>.</li>
+              <li>Redeem a session of an endpoint it does not run, or switch the token.</li>
+            </ul>
+          </div>
+          <div class="tc-group">
+            <span class="tc-label can"><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>Can, and what limits it</span>
+            <ul>
+              <li>Take one price for a request it never answers, because each voucher is signed before its response exists. The client stops signing at the first bad receipt.</li>
+              <li>Serve wrong data: a redeemed head proves which bytes the client accepted, not that they were good.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card trust-card">
+          <h3>A malicious buyer</h3>
+          <div class="tc-group">
+            <span class="tc-label cannot"><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg>Cannot, enforced by the contract</span>
+            <ul>
+              <li>Close before 15 minutes after expiry, which leaves the seller time to redeem.</li>
+              <li>Take back redeemed money, reopen a closed session or replay its vouchers.</li>
+              <li>Spend past the budget, or make the seller pay the session's storage.</li>
+            </ul>
+          </div>
+          <div class="tc-group">
+            <span class="tc-label can"><svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>Can, and what limits it</span>
+            <ul>
+              <li>Stop at any time: the seller risks only what it has not redeemed, and it holds a signed voucher for every request it answered.</li>
+              <li>Open many small sessions: the hosted seller refuses budgets under 0.25 pUSD (off-chain).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <p class="trust-foot muted">Refunds: <code>close</code> after expiry returns the unspent budget plus most of the storage deposit (7.67 tPOT measured). A failed request is not charged and a lost response is sent again for free, by seller code. Full model: <a class="link" href="read/SESSIONS.txt">Sessions: protocol, guarantees and limits</a> and <a class="link" href="read/SECURITY.txt">Security</a>.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ quickstart -->
+  <section class="section" id="quickstart">
+    <div class="wrap qs-grid">
+      <div class="section-head qs-head">
+        <span class="eyebrow">Quickstart</span>
+        <h2>Five lines from a terminal, with their real output.</h2>
+        <p>You need a testnet EVM key with about 12 tPOT and 0.25 pUSD (asset 7777, from the native exchange) in <code>buyer.env</code>. What we got on 5 Nov 2026, as printed; JSON bodies condensed to one line and long hashes shortened.</p>
+      </div>
+      <div class="term term-lg card">
+        <div class="term-bar"><span></span><span></span><span></span><b class="mono">buyer · zsh</b><button class="icon-btn js-only" type="button" data-copy-from="qs-cmds" aria-label="Copy the five commands"><svg class="i-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i-done" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+<pre class="mono" id="qs-pre"><span class="tp">$</span> <span class="qc">npm i github:swiftbotlabs/portal-meter</span>
+<span class="tc">npm WARN deprecated node-domexception@1.0.0: Use your platform's native DOMException instead</span>
+<span class="tc">npm WARN deprecated @substrate/connect@0.8.11: versions below 1.x are no longer maintained</span>
+<span class="to">added 79 packages in 13s</span>
+
+<span class="tp">$</span> <span class="qc">curl -s https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777</span>
+<span class="to">{ "error": "payment required", "accepts": [ { … "provider": "0xE13A4d566A1f6492C1511EF100DC0417ccE18E59", "endpointId": 3, "tokenSymbol": "pUSD", "price": "10000", … } ] }</span>
+
+<span class="tp">$</span> <span class="qc">npx portal-meter session-open 3 --keys buyer.env --budget 0.25 --days 1 --out s.json</span>
+<span class="to">session 0xbf59f966153d082007c9a1b36c6361dc1365adc1522c71badc1c6d0f7f1778ab: budget 0.25, tx 0xc7dcc4a5…06c6, block 329592, state in s.json</span>
+
+<span class="tp">$</span> <span class="qc">npx portal-meter session-buy https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777 --session s.json</span>
+<span class="to">· HTTP 200, request 1, spent 10000, head 0xebcfba2e…b065</span>
+<span class="to">{ "at": { "number": 329593, … }, "assetId": 7777, "name": "Portaldot USD (test)", "symbol": "pUSD", "decimals": 6, … }</span>
+
+<span class="tp">$</span> <span class="qc">npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev --session s.json</span>
+<span class="to">NOT YET   1 request in the log, no batch on-chain yet: the seller settles on its own schedule, run this again later</span>
+<span class="tc"># the seller's batch landed in block 329697; line 5 again:</span>
+<span class="ok">ACCEPT    1 request in the log, 1 batch on-chain</span></pre>
+        <textarea id="qs-cmds" hidden>npm i github:swiftbotlabs/portal-meter
+curl -s https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777
+npx portal-meter session-open 3 --keys buyer.env --budget 0.25 --days 1 --out s.json
+npx portal-meter session-buy https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777 --session s.json
+npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev --session s.json</textarea>
+      </div>
+        <div class="qs-more">
+          <h3>Check our session yourself, no key needed</h3>
+          <pre class="codeblock mono">npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev \
+  --id 0xbf59f966153d082007c9a1b36c6361dc1365adc1522c71badc1c6d0f7f1778ab \
+  --provider 0xE13A4d566A1f6492C1511EF100DC0417ccE18E59 --endpoint 3</pre>
+          <p class="muted">The same package is mirrored on the hosted seller: <code>npm i https://portal-meter.swiftbotlab.workers.dev/source/{{TGZ}}</code></p>
+        </div>
+    </div>
+
+    <div class="wrap sell-grid">
+      <div class="sell-copy">
+        <h3>Add it to your API</h3>
+        <p class="muted">The metering core works on Web standard Request and Response, so it runs on Node.js, Cloudflare Workers, Bun and Deno, with an adapter for Express. Register an endpoint on both VMs with one command, wrap a handler, done. The hosted seller is itself built on it.</p>
+        <p class="muted">Reuse, tested: <a class="link" href="read/paid-indexer-README.txt">a second seller in a folder of its own</a>, built on the published entry points only, live as endpoint 4 at <a class="link" href="https://paid-indexer.swiftbotlab.workers.dev/" target="_blank" rel="noopener">paid-indexer.swiftbotlab.workers.dev</a>.</p>
+      </div>
+      <div class="term card">
+        <div class="term-bar"><span></span><span></span><span></span><b class="mono">server.mjs</b></div>
+<pre class="mono"><span class="tk">import</span> { createMeter, metered } <span class="tk">from</span> <span class="ts">'portal-meter'</span>;
+
+<span class="tk">const</span> meter = createMeter({ chainId, sessionContract, endpointId, wallet, token, tokenSymbol, decimals, readSession });
+
+<span class="tc">// Express: the handler returns the body, the meter hashes and signs it</span>
+app.get(<span class="ts">'/v1/weather/:city'</span>, metered(meter, { price: <span class="tn">10_000n</span> }, <span class="tk">async</span> req =&gt; forecast(req.params.city)));
+
+<span class="tc">// Cloudflare Workers, Bun, Deno, Hono: Web standard Request and Response</span>
+<span class="tk">export default</span> { fetch: req =&gt; meter.charge(req, { price: <span class="tn">10_000n</span> }, () =&gt; forecast(<span class="ts">'oslo'</span>)) };</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ docs -->
+  <section class="section" id="docs">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Everything in one place</span>
+        <h2>Docs, source and proof.</h2>
+        <p>All of it is served by the hosted seller itself, as plain text and files.</p>
+      </div>
+      <div class="links-grid">
+        <div class="links card">
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Try and watch</h3>
+          <ul>
+            <li><a href="demo/">Live page: buy a real API call, no wallet</a></li>
+            <li><a href="https://youtu.be/sgGdQ-WLum0" target="_blank" rel="noopener">Demo video on YouTube, 2:23</a></li>
+            <li><a href="demo/portal-meter-demo.mp4">Demo video, MP4</a></li>
+            <li><a href="pitch/portal-meter-deck.pdf">Pitch deck, PDF</a></li>
+            <li><a href="https://github.com/swiftbotlabs/portal-meter" target="_blank" rel="noopener">Repository on GitHub (MIT)</a></li>
+          </ul>
+        </div>
+        <div class="links card">
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg>Read</h3>
+          <ul>
+            <li><a href="read/README.txt">README</a></li>
+            <li><a href="read/SESSIONS.txt">Sessions: protocol, guarantees and limits</a></li>
+            <li><a href="read/ARCHITECTURE.txt">Architecture</a></li>
+            <li><a href="read/SECURITY.txt">Security</a></li>
+            <li><a href="read/PORTALDOT_V3_NOTES.txt">Measured Portaldot V3 notes</a></li>
+          </ul>
+        </div>
+        <div class="links card">
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-layers"/></svg>Reuse</h3>
+          <ul>
+            <li><a href="read/paid-indexer-README.txt">A second seller in a folder of its own: the paid indexer example</a></li>
+            <li><a href="read/paid-indexer-RUN.txt">Its run on the testnet: clean install, register, two paid calls, one cross-VM settlement</a></li>
+            <li><a href="read/paid-indexer-server.mjs.txt">Its seller, built on the published entry points only</a></li>
+            <li><a href="read/settler.mjs.txt">createSettler: settlement for any seller</a></li>
+          </ul>
+        </div>
+        <div class="links card" id="source">
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-code"/></svg>Source</h3>
+          <div class="source-cols">
+            <ul>
+              <li><a href="source/portal-meter-src.tar.gz">Source at {{HEAD}}, {{COUNT}} commits</a></li>
+              <li><a href="source/{{TGZ}}">The npm package, as a tarball</a></li>
+              <li><a href="source/commit-history.txt">Commit history with dates and files</a></li>
+              <li><a href="read/worker-index.mjs.txt">The hosted seller</a></li>
+            </ul>
+            <ul>
+              <li><a href="read/MeterSession.sol.txt">MeterSession.sol</a></li>
+              <li><a href="read/MeterSettlement.sol.txt">MeterSettlement.sol</a></li>
+              <li><a href="read/meter_registry.lib.rs.txt">MeterRegistry (ink!)</a></li>
+              <li><a href="read/meter.mjs.txt">The metering core</a></li>
+            </ul>
+          </div>
+          <p class="muted small">Full git history as a bundle, in parts: {{PARTS}}. Join them with <code>cat portal-meter.bundle.part* &gt; portal-meter.bundle</code>, then <code>git clone portal-meter.bundle</code>.</p>
+        </div>
+        <div class="links card">
+          <h3><svg class="ico" aria-hidden="true"><use href="#i-block"/></svg>Proof data</h3>
+          <ul>
+            <li><a href="deployments/sessions.json">Sessions: contracts and transactions</a></li>
+            <li><a href="deployments/testnet.json">Escrow: contracts and transactions</a></li>
+            <li><a href="deployments/proof/session-measure.json">Measured costs</a></li>
+            <li><a href="deployments/proof/session-negative-checks.json">Negative checks</a></li>
+            <li><a href=".well-known/portal-meter">Seller catalog</a></li>
+            <li><a href="health">Seller health</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap cta-band-inner">
+      <div>
+        <h2>Buy one request. Then replay it against the chain.</h2>
+        <p class="muted">A public test key in the page signs the voucher. No wallet, no install, test tokens only.</p>
+      </div>
+      <a class="btn btn-primary" href="demo/">Open the live page <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <a class="brand" href="./"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 16 L23.5 9.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>Portal Meter</a>
+    <span>By Swift Bot Labs for the Portaldot Hacker House 2026, track Modular Cloud &amp; Middleware. MIT. Testnet only.</span>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="demo/">Live page</a><a href="read/README.txt">README</a><a href="pitch/portal-meter-deck.pdf">Deck</a><a href="https://github.com/swiftbotlabs/portal-meter" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</footer>
+<script src="assets/site.js" defer></script>
+</body>
+</html>
