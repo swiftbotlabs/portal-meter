@@ -126,6 +126,12 @@ try {
     when.className = 'muted';
     when.textContent = 'Replayed at ${at} against the chain:';
     document.getElementById('try-verdict').prepend(when);
+    // the static page shows the buy button as it is before the scripts wire it: disabled, and no "connecting" hint
+    // without JavaScript (the inline head script adds the js class again in a browser that runs scripts)
+    document.getElementById('try-btn').disabled = true;
+    document.getElementById('try').classList.remove('ready', 'busy');
+    document.documentElement.classList.remove('js');
+    if (!document.documentElement.classList.length) document.documentElement.removeAttribute('class');
     return true;
   })()`);
   const html = '<!doctype html>\n' + (await evaluate('document.documentElement.outerHTML')) + '\n';
@@ -136,6 +142,7 @@ try {
   if (left) die(`placeholder left in the static page: "${left[0]}"`);
   if (!/ACCEPT/.test(text) || !/282559/.test(text)) die('the static page lacks the replay verdict or the measured batch');
   if (!html.includes('<script type="module" src="app.js"></script>')) die('the page script is missing from the snapshot');
+  if (!/<button id="try-btn" type="button" disabled="">/.test(html) || /<html[^>]*\bclass="[^"]*\bjs\b/.test(html)) die('the buy button state was not reset in the snapshot');
 
   writeFileSync(`${PAGE}.tmp`, html);
   renameSync(`${PAGE}.tmp`, PAGE);

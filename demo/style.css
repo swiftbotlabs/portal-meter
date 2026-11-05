@@ -76,6 +76,9 @@ textarea { width: 100%; background: var(--bg); color: var(--ink); border: 1px so
 button { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 8px 16px; font-weight: 600; cursor: pointer; font-size: 0.92rem; }
 button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 button:disabled { opacity: 0.6; cursor: progress; }
+button:not(:disabled):hover { filter: brightness(1.08); }
+button:not(:disabled):active { transform: translateY(1px); filter: brightness(0.94); }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #verdict { margin-top: 12px; }
 .verdict { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.04em; }
 .verdict.ACCEPT { color: var(--ok); }
@@ -100,6 +103,24 @@ button:disabled { opacity: 0.6; cursor: progress; }
 .try-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
 .try-row input { flex: 1 1 200px; min-width: 0; }
 .try-row input, .try-row select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
-pre.body { background: var(--code); border-radius: 8px; padding: 10px 12px; max-height: 260px; overflow: auto; font-size: 0.82rem; margin: 8px 0; }
+pre.body { background: var(--code); border-radius: 8px; padding: 10px 12px; height: 220px; overflow: auto; font-size: 0.82rem; margin: 8px 0; }
+pre.body.waiting::before { content: "the response body appears here"; color: var(--muted); }
 .m.DONE, .m.PASS { color: var(--ok); }
 .sub { font-size: 0.95rem; margin: 16px 0 6px; }
+
+/* "Buy one request": visible from first paint, disabled until the page has wired it; each step shows the moment it starts */
+#try-steps { min-height: 1.5em; }
+html.js #try-steps:empty::before { color: var(--muted); font-size: 0.9rem; content: "Each step of the purchase shows here as it happens."; }
+html.js #try:not(.ready) #try-steps:empty::before { content: "Connecting to the seller…"; }
+#try.busy #try-steps { min-height: 8.3em; } /* four finished rows at 1280 px; 12.8em at 768, 21.7em at 390 */
+#try-steps li { animation: step-in 0.18s ease-out; }
+.checks .WAIT { color: var(--accent); animation: wait-pulse 1s ease-in-out infinite alternate; }
+@keyframes step-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes wait-pulse { to { opacity: 0.45; } }
+@media (max-width: 900px) { #try.busy #try-steps { min-height: 12.8em; } }
+@media (max-width: 560px) { #try.busy #try-steps { min-height: 21.7em; } }
+@media (prefers-reduced-motion: reduce) {
+  #try-steps li { animation-name: step-fade; }
+  button:not(:disabled):active { transform: none; }
+  @keyframes step-fade { from { opacity: 0; } }
+}

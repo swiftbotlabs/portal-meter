@@ -15,16 +15,22 @@ const EXPLORER = 'https://scanner-testnet-v3.portaldot.dev';
 const blockLink = n => `<a href="${EXPLORER}/#/blocks/${n}?tab=events" target="_blank" rel="noopener">${n}</a>`;
 
 function step(state, title, detail = '') {
+  $('try-steps').querySelector('li.wait')?.remove();
   const li = document.createElement('li');
   li.innerHTML = `<span class="m ${state}">${state === 'PASS' ? 'DONE' : state}</span><span><b>${esc(title)}</b>${detail ? ` <span class="d">${detail}</span>` : ''}</span>`;
+  if (state === 'WAIT') li.className = 'wait';
   $('try-steps').append(li);
 }
+// a failed purchase leaves its box in place, saying so, so the stats below do not jump back
+const noBody = (text = 'No response body: not charged.') => { $('try-body').classList.remove('waiting'); $('try-body').textContent = text; };
+// the step in progress, shown the moment it starts and replaced by its result
+const wait = title => step('WAIT', title);
 
 export async function setupTry(s, net) {
   const box = $('try');
-  if (!s || !s.demoSession) return;
+  if (!s || !s.demoSession) { box.hidden = true; return; }
   box.hidden = false;
-  $('try-verdict').innerHTML = ''; // a verdict baked into the static page is for readers without JavaScript: here it runs live
+  // a verdict baked into the static page stays, under its "Replayed at" time, until the visitor replays it live
   const base = s.hostedSeller;
   const demo = s.demoSession;
   const signer = new Wallet(keccak256(toUtf8Bytes(demo.seed)));
@@ -56,7 +62,7 @@ export async function setupTry(s, net) {
 
   async function buyOnce(url) {
     $('try-steps').innerHTML = '';
-    $('try-body').hidden = true;
+    wait('Asking the seller for a price…');
     for (let attempt = 0; attempt < 4; attempt++) {
       const v = await fetch(`${base}/v1/session/${demo.id}`, { cache: 'no-store' }).then(r => r.json());
       const client = new SessionClient({
@@ -65,40 +71,67 @@ export async function setupTry(s, net) {
       });
       const r = await client.get(url, {
         onStep: (name, x) => {
-          if (name === 'quote') step('PASS', `HTTP 402: ${money(x.price)} for endpoint ${x.endpointId}`, `request hash ${short(x.requestHash)}`);
-          if (name === 'voucher') step('PASS', `Voucher ${x.count} signed in your browser, no gas and no wallet`, `cumulative ${money(x.cumulative)}, chain head ${short(x.head)}`);
+          if (name === 'quote') {
+            step('PASS', `HTTP 402: ${money(x.price)} for endpoint ${x.endpointId}`, `request hash ${short(x.requestHash)}`);
+            wait('Signing the voucher in your browser…');
+          }
+          if (name === 'voucher') {
+            step('PASS', `Voucher ${x.count} signed in your browser, no gas and no wallet`, `cumulative ${money(x.cumulative)}, chain head ${short(x.head)}`);
+            wait('Sending it to the seller and checking the answer…');
+          }
         },
       });
       if (r.status === 409 || r.status === 429) {
         step('SKIP', 'Another visitor got there first, signing the next step');
+        wait('Asking the seller for a fresh price…');
         await new Promise(res => setTimeout(res, 1200));
         continue;
       }
       const text = new TextDecoder().decode(r.body);
       if (r.status !== 200) {
         step('FAIL', `HTTP ${r.status}: not charged`, esc(text.slice(0, 200)));
+        noBody();
         return;
       }
       step('PASS', 'HTTP 200: body received, its hash matches the provider-signed receipt', `response ${short(r.receipt.responseHash)}`);
       step('PASS', 'The next voucher of this session commits to this response hash', 'the key here is shared by visitors, so this shows the mechanism; a real client checks each response before it signs the next voucher');
       $('try-body').textContent = text;
-      $('try-body').hidden = false;
+      $('try-body').classList.remove('waiting');
       return;
     }
     step('FAIL', 'Busy right now: try again in a minute');
+    noBody();
   }
 
   const btn = $('try-btn');
+  const LABEL = 'Buy one request';
   btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    // feedback in the same frame as the click; the space for the steps and the body is held from here, so the stats
+    // below stay put while the answers arrive
+    const steps = $('try-steps'), body = $('try-body');
+    btn.style.minWidth = `${btn.offsetWidth}px`;
     btn.disabled = true;
+    btn.textContent = 'Buying…';
+    btn.setAttribute('aria-busy', 'true');
+    if (steps.children.length) steps.style.minHeight = `${steps.offsetHeight}px`; // the last purchase's rows: same size again
+    box.classList.add('busy');
+    body.textContent = '';
+    body.classList.add('waiting');
+    body.hidden = false;
     try {
       const kind = $('try-kind').value;
       const arg = encodeURIComponent($('try-arg').value.trim());
       await buyOnce(`${base}/v1/${kind}/${arg}`);
     } catch (e) {
       step('FAIL', esc(e.message));
+      noBody('No response body.');
     } finally {
       btn.disabled = false;
+      btn.textContent = LABEL;
+      btn.removeAttribute('aria-busy');
+      box.classList.remove('busy');
+      body.classList.remove('waiting');
       refresh();
     }
   });
@@ -109,6 +142,7 @@ export async function setupTry(s, net) {
   // Anyone can replay the public log against the payer-signed heads on-chain and the ink! anchors.
   $('try-verify').addEventListener('click', async () => {
     const out = $('try-verdict');
+    out.style.minHeight = `${out.offsetHeight}px`; // the old verdict's space is held until the new one lands
     out.textContent = 'replaying the log and reading the chain…';
     try {
       const rows = [];
@@ -136,7 +170,11 @@ export async function setupTry(s, net) {
     } catch (e) {
       out.innerHTML = `<div class="verdict REJECT">REJECT</div><p class="muted">${esc(e.message)}</p>`;
     }
+    out.style.minHeight = '';
   });
+  // wired: the button shown disabled since first paint is ready now
+  btn.disabled = false;
+  box.classList.add('ready');
   await refresh();
   setInterval(refresh, 30_000);
 }

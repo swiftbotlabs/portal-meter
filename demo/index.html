@@ -6,6 +6,7 @@
   <title>Portal Meter · live on Portaldot V3 testnet</title>
   <meta name="description" content="Pay-per-request API settlement on Portaldot V3: Solidity escrow on the EVM, ink! provider registry on WASM. Live testnet state and a free receipt verifier.">
   <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js')</script>
   <script type="importmap">
     { "imports": { "ethers": "./vendor/ethers-6.16.0.min.js" } }
   </script>
@@ -44,7 +45,7 @@
         prepaid session: one budget, a signed voucher per request, many requests settled in one transaction.</p>
     </section>
 
-    <section class="card" id="try" hidden>
+    <section class="card" id="try">
       <h2>Buy a real API call from this page</h2>
       <p class="muted">No wallet, no install. A public test key in this page signs a voucher against a capped prepaid session, the
         hosted seller checks it and answers. Nothing goes on-chain per request: the seller settles many requests in one
@@ -53,7 +54,7 @@
       <div class="row try-row">
         <select id="try-kind" aria-label="endpoint"><option value="asset">/v1/asset/</option><option value="account">/v1/account/</option></select>
         <input id="try-arg" value="7777" maxlength="64" spellcheck="false" aria-label="asset id or address">
-        <button id="try-btn" type="button">Buy one request</button>
+        <button id="try-btn" type="button" disabled>Buy one request</button>
       </div>
       <ul class="checks" id="try-steps" aria-live="polite"></ul>
       <pre id="try-body" class="body" hidden></pre>
@@ -73,7 +74,7 @@
 
     <section class="card" id="video">
       <h2>Demo video</h2>
-      <video controls preload="none" poster="video-poster.jpg" style="width:100%;border-radius:8px" src="portal-meter-demo.mp4"></video>
+      <video controls preload="none" poster="video-poster.jpg" width="1920" height="1080" style="width:100%;height:auto;border-radius:8px" src="portal-meter-demo.mp4"></video>
     </section>
 
     <section id="pending" class="card notice" hidden></section>

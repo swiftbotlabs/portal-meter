@@ -211,7 +211,13 @@ function setupVerifier(d, reg) {
 
 // ------------------------------------------------------------------ boot
 async function main() {
-  document.getElementById('prerendered')?.remove(); // the static snapshot's note: from here on every panel is live
+  // the static snapshot's note: from here on every panel is live. Reworded in place, its space held, so nothing below moves
+  const note = document.getElementById('prerendered');
+  if (note) {
+    note.style.minHeight = `${note.offsetHeight}px`;
+    const at = (note.textContent.match(/\d{4}-\d\d-\d\dT[\d:]+Z/) || ['an earlier time'])[0];
+    note.textContent = `This page opened with a snapshot of the live PortaldotV3 testnet taken at ${at}, including the replay of the public session below. Your browser is now reading every panel again, live from the chain.`;
+  }
   refreshNetwork();
   setInterval(refreshNetwork, 12_000);
   let d = null;
@@ -228,6 +234,7 @@ async function main() {
     $('pending').innerHTML = `<h2>Deployment file unavailable</h2><p>The deployment record could not be loaded. The panels below
       still read the live chain: the network itself and Portaldot's native-asset ERC-20 precompile.</p>`;
     $('pending').hidden = false;
+    $('try').hidden = true;
     kv($('contracts-kv'), [['status', 'not deployed yet']]);
     setupVerifier(null, null);
     return;
@@ -249,6 +256,8 @@ async function main() {
     sessions.readOrigin = d.readOrigin;
     sessions.selectors = d.registry.selectors;
     setupTry(sessions, NET);
+  } else {
+    $('try').hidden = true;
   }
   let reg = null;
   try {
