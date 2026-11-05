@@ -148,7 +148,7 @@ main > section { position: relative; }
 /* the sequence: script-driven phases; without the script (or with reduced motion) the machine rests on its last frame */
 .machine:not(.is-static)[data-phase="ready"] .indicium,
 .machine:not(.is-static)[data-phase="press"] .indicium,
-.machine:not(.is-static)[data-phase="quote"] .indicium { opacity: 0; transform: scale(1.35) rotate(-4deg); }
+.machine:not(.is-static)[data-phase="quote"] .indicium { opacity: 0; transform: scale(1.35); }
 .machine:not(.is-static) .indicium { transition: opacity 90ms linear, transform 360ms var(--ease-stamp); }
 .machine:not(.is-static)[data-phase="ready"] .killer,
 .machine:not(.is-static)[data-phase="press"] .killer,
@@ -188,7 +188,7 @@ main > section { position: relative; }
 .w-escrow i { background: var(--ink); }
 .w-session i { background: var(--accent); min-width: 0; box-shadow: var(--glow); }
 .w-session i { transform: scaleX(max(var(--v), 0.006)); }
-.w-track em { position: absolute; left: 22px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: var(--t-14); font-weight: 600; color: var(--accent-text); white-space: nowrap; }
+.w-track em { position: absolute; left: 22px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: var(--t-14); font-weight: 650; color: var(--accent-text); white-space: nowrap; background: var(--bg); padding: 2px 6px; }
 .w-track em::before { content: ""; position: absolute; right: calc(100% + 6px); top: 50%; width: 10px; height: 1px; background: currentColor; }
 .w-val { display: flex; align-items: baseline; gap: 8px; justify-content: flex-end; font: 860 clamp(2.25rem, 1rem + 2.4vw, 3.5rem)/0.9 var(--display); font-stretch: 62%; letter-spacing: -0.01em; }
 .w-val small { font: 600 var(--t-16)/1 var(--sans); color: var(--muted); }
@@ -558,8 +558,13 @@ main > section { position: relative; }
 /* code and terminal lines wrap rather than being cut */
 .term-line, .formula { white-space: pre-wrap; overflow-wrap: anywhere; }
 .codeblock { white-space: pre-wrap; overflow-wrap: anywhere; }
-.fine code { white-space: normal; overflow-wrap: anywhere; }
+.fine code { white-space: normal; overflow-wrap: anywhere; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .hash .h { flex: 1 1 auto; }
 .hash .icon-btn { flex: none; }
 .closing > .wrap { gap: var(--s-6); }
 .closing h2 { font-size: clamp(2.5rem, 1rem + 3.4vw, 4.5rem); }
+
+/* full hashes wrap instead of being cut (the manifest rows show a short form and keep the full one in the text) */
+.lr-body .hash .h, .contracts .hash .h { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; }
+.closing > .wrap { padding-top: calc(var(--nav-h) + 48px); gap: var(--s-5); }
+@media (max-width: 640px) { .hero { padding-bottom: 0; } }
