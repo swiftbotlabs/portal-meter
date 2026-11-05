@@ -152,7 +152,8 @@ export function verifyLog(session, rows, redemptions) {
     const headOk = inLog !== undefined && inLog.toLowerCase() === r.head.toLowerCase();
     const row = rows[r.count - 1];
     const sumOk = r.cumulative === undefined || (row !== undefined && BigInt(row.cumulative ?? -1) === BigInt(r.cumulative));
-    checks.push({ name: `batch up to request ${r.count} matches the payer-signed head on-chain (responses 1 to ${r.count - 1} acknowledged)`, ok: headOk && sumOk, detail: r.head });
+    const acked = r.count > 2 ? `responses 1 to ${r.count - 1} acknowledged` : r.count === 2 ? 'response 1 acknowledged' : 'no response acknowledged yet';
+    checks.push({ name: `batch up to request ${r.count} matches the payer-signed head on-chain (${acked})`, ok: headOk && sumOk, detail: r.head });
   }
   if (redemptions.length === 0) checks.push({ name: 'no redeemed batch yet', ok: true, detail: 'nothing on-chain to compare' });
   return { ok: checks.every(c => c.ok), checks };

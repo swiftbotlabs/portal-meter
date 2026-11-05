@@ -4,6 +4,13 @@
 for good on this chain, so we built prepaid sessions: 100 requests locked about 7.6 tPOT in total and were settled in one
 Ethereum transaction across Solidity and ink!.**
 
+![Storage deposit locked for good per request on the Portaldot V3 testnet: 7.53 tPOT when paying on-chain for each request, 0.076 tPOT in a prepaid session of 100 requests](pitch/cost-per-request.png)
+
+Measured on the PortaldotV3 testnet with our own keys. Per request: 7.70 tPOT locked at pay, 0.17 back at settle (blocks 276657
+to 276660). Session of 100 requests: 11.55 locked at open (block 282490), 3.68 for its ink! anchor (block 282559), 7.67 back at
+close (block 297818). Data: [`deployments/proof/session-measure.json`](deployments/proof/session-measure.json) and
+[`deployments/testnet.json`](deployments/testnet.json). Test tokens have no value; the ratio is the point.
+
 An API provider lists an endpoint with a price. A client pays per call in a Portaldot native asset, reached from Solidity
 through the runtime's ERC-20 precompile. Money moves in a Solidity contract on Portaldot's EVM. In the same Ethereum-signed
 transaction, the outcome lands in an **ink!** registry on Portaldot's WASM VM, which gives every provider a public record
@@ -38,6 +45,52 @@ log is [RUN.md](examples/paid-indexer/RUN.md).
 5. Try to cheat: `node scripts/negative-checks-sessions.mjs` sends bad vouchers to the live seller and dry-runs against the live
    contract, no key needed. 22 of 22 are refused.
 
+## Five lines from a terminal
+
+One paid call against the live seller, settled across both VMs, then checked against the chain:
+
+```bash
+npm i github:swiftbotlabs/portal-meter
+curl -s https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777
+npx portal-meter session-open 3 --keys buyer.env --budget 0.25 --days 1 --out s.json
+npx portal-meter session-buy https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777 --session s.json
+npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev --session s.json
+```
+
+`buyer.env` is a `0600` file with one line, `PORTALDOT_EVM_BUYER_KEY=0x…`: a testnet EVM key holding about 12 tPOT and 0.25 pUSD
+(asset 7777, from Portaldot's native exchange). The same package is mirrored on the hosted seller, in case GitHub is out of reach:
+`npm i https://portal-meter.swiftbotlab.workers.dev/source/portal-meter-0.1.0.tgz`.
+
+What we got, line by line, on 5 Nov 2026, with the package installed from an `npm pack` of this repository, which is what the mirror
+serves (long hashes shortened here only):
+
+```text
+added 79 packages in 13s
+{ "error": "payment required", "accepts": [ { … "provider": "0xE13A4d566A1f6492C1511EF100DC0417ccE18E59", "endpointId": 3, "tokenSymbol": "pUSD", "price": "10000", … } ] }
+session 0xbf59f966153d082007c9a1b36c6361dc1365adc1522c71badc1c6d0f7f1778ab: budget 0.25, tx 0xc7dcc4a5…06c6, block 329592, state in s.json
+· HTTP 200, request 1, spent 10000, head 0xebcfba2e…b065
+{ "at": { "number": 329593, … }, "assetId": 7777, "name": "Portaldot USD (test)", "symbol": "pUSD", "decimals": 6, … }
+NOT YET   1 request in the log, no batch on-chain yet: the seller settles on its own schedule, run this again later
+```
+
+We then asked the seller to settle now (`POST /admin/settle`, its owner's button; left alone, its cron settles a session about 6 hours
+after its last request). One Ethereum transaction,
+[block 329697](https://scanner-testnet-v3.portaldot.dev/#/blocks/329697?tab=events), carried the Solidity redeem and the ink!
+anchor, and line 5 again:
+
+```text
+batch     up to request 1: 10000 paid, block 329697, tx 0x24aa5a1947432405911e0cd0bd2ce4f6e600901c6b2390eb91f5e8d89a18b770
+PASS      log replays from the session genesis: 1 request
+PASS      batch up to request 1 matches the payer-signed head on-chain (no response acknowledged yet): 0xebcfba2e…b065
+PASS      ink! anchor of the batch up to request 1: endpoint, amount and receipt hash: block 329697, 10000 paid
+ACCEPT    1 request in the log, 1 batch on-chain
+```
+
+Opening locked 11.55 tPOT of storage deposit and 0.25 pUSD. `npx portal-meter session-close --session s.json --keys buyer.env`
+returns the unspent 0.24 pUSD and two thirds of that deposit (7.67 tPOT when we measured it) from 15 minutes after expiry. Anyone can check that
+session without a key:
+`npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev --id 0xbf59f966153d082007c9a1b36c6361dc1365adc1522c71badc1c6d0f7f1778ab --provider 0xE13A4d566A1f6492C1511EF100DC0417ccE18E59 --endpoint 3`.
+
 ## What one request costs on-chain
 
 Storage deposits decide this. We measured both paths on the testnet with our own keys (the numbers are in
@@ -53,6 +106,80 @@ Escrow numbers: blocks 276657 to 276660. Session numbers: 100 requests sent over
 request, then one batch. The session locks 11.55 tPOT at open, 7.67 of which comes back at close, and its batch locks one ink!
 anchor, 3.68 tPOT. Each further batch of a session adds one more anchor. Settlement also runs unattended: the seller's cron sent
 [block 282470](https://scanner-testnet-v3.portaldot.dev/#/blocks/282470?tab=events) by itself. Details: [docs/SESSIONS.md](docs/SESSIONS.md).
+
+## Trust model
+
+What each side can and cannot do to the other, and what enforces it. **Contract** means the deployed code: `MeterSession`
+(`0xCc2aBc8A…`) and `MeterSettlement` (`0x9E7Ad2Aa…`) on the EVM, `MeterRegistry` in ink!. **Off-chain** means our seller,
+client and verifier, which another seller could run differently.
+
+### Prepaid session
+
+A malicious seller **can**:
+
+- take the price of one request and never answer it. The voucher for request n is signed before its response exists, so the
+  seller always holds one unanswered voucher. `SessionClient` checks every receipt and stops signing at the first bad one
+  (off-chain), so the loss is one price.
+- serve wrong data. A redeemed head proves which bytes the client accepted, not that they were any good.
+- change its payee or price, or pause the endpoint (`MeterSettlement.updateEndpoint`). `MeterSession` never reads the on-chain
+  price: the client signs only quotes at or below its `--max` (off-chain). Redeem and close keep working on a paused endpoint.
+- write any record it likes in its own ink! namespace, including one nobody paid for. `session-verify` checks that each
+  anchor holds exactly the money of its `Redeemed` event (off-chain).
+
+A malicious seller **cannot** (contract):
+
+- take more than the session key signed. `redeem` pays only `cumulative - redeemed` of a voucher whose EIP-712 signature
+  recovers to the session's signer (`BadSignature`), never above the deposit (`OverBudget`), and only a voucher newer in both
+  amount and count (`NotNewer`).
+- redeem a session of an endpoint it does not run: only that endpoint's provider may call `redeem` (`NotAllowed`).
+- touch the unspent budget: only the payer may `close`.
+- switch the token: no function changes an endpoint's token after registration.
+
+A malicious buyer **can**:
+
+- stop at any time. The seller holds a signed voucher for every request it has answered, so it risks only what it has not
+  redeemed by the time the payer may close.
+- open many small sessions so that the seller pays one ink! anchor deposit for each. The hosted seller refuses budgets under
+  0.25 pUSD (off-chain).
+
+A malicious buyer **cannot** (contract):
+
+- close early: `close` reverts until 15 minutes after expiry (`TooEarly`, `CLOSE_GRACE`), which leaves the seller time to redeem.
+- take back what was redeemed, reopen a closed session id or replay its vouchers. `close` keeps the session's first slot, so
+  `open` reverts with `SessionExists` and `redeem` with `NoSession`.
+- spend past its budget: the seller answers 402 before the handler runs (off-chain), and `redeem` would revert anyway.
+- spend one step twice. On-chain only one voucher per count can ever be redeemed. Off-chain the seller serves one request per
+  session at a time (409) and accepts only the voucher that extends its own chain.
+- make the seller pay the session's storage: `open` writes all three slots from the payer's account, `redeem` writes none.
+- pay with a token that delivers less than it says: `open` and `topUp` revert (`FeeOnTransfer`).
+
+Disputes and refunds:
+
+- There is no dispute transaction per request. A failed request charges nothing: the seller does not advance the session and
+  the client signs the same step again. A lost response costs nothing: the same voucher gets the same body back (responses up to
+  64 KB). Both are seller code, not contract rules.
+- The refund is `close`. From 15 minutes after expiry the payer gets `deposit - redeemed` back, plus the storage deposit of two of
+  the session's three slots (7.67 tPOT when we measured it).
+- Timeouts: the payer picks the expiry at `open`, 10 minutes to 30 days ahead (contract). The hosted seller stops serving 30 minutes
+  before expiry. It settles once 25 requests wait, 6 hours after a session's last request, or within an hour of a session's expiry when at
+  least 0.05 pUSD of it is unredeemed (off-chain).
+- `MeterRegistry.rate` (confirm or dispute) exists for per-request escrow payments only. In a session the buyer's recourse is to
+  stop signing, close after expiry, and the public log, which anyone can replay against the signed head (`portal-meter session-verify`).
+
+### Per-request escrow
+
+- The buyer pays one request into escrow with a `maxPrice`. The request id is derived from the payer's address, so only that
+  payer can reclaim or rate it.
+- The provider can `settle` it once, to its payee, or `refund` it at any time. If it does neither, the payer can reclaim it after
+  the endpoint's refund delay, 60 seconds to 7 days. The delay is read when the payer reclaims, so a provider can raise it, to 7
+  days at most.
+- A malicious provider can settle without serving: `settle` is its call alone. The buyer cannot get that money back on-chain. It
+  can dispute in ink! with `rate(…, ok = false)`, which only the real payer can do and which lowers the provider's public score.
+
+### Our own operations
+
+- The hosted seller's provider key is a Cloudflare Worker secret. Whoever holds it can do what a malicious seller can, as listed
+  above, and no more.
 
 ## Add it to your API
 
@@ -81,10 +208,12 @@ node bin/portal-meter.mjs register --keys provider.env --asset 7777 --price 0.01
 node bin/portal-meter.mjs session-open 3 --keys buyer.env --budget 0.5 --out session.json    # lock a budget, get a capped session key
 node bin/portal-meter.mjs session-buy https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777 --session session.json
 node bin/portal-meter.mjs set-url 3 --keys provider.env --url https://new.example/v1/        # moved hosts: the URL buyers find in ink!
+node bin/portal-meter.mjs session-verify https://portal-meter.swiftbotlab.workers.dev --session session.json   # ACCEPT once settled, no key
 ```
 
-Anyone can check a session against the chain with `verifySellerSession` from `portal-meter/verify`: the seller's public log, the
-payer-signed heads in the `Redeemed` events, and each batch's ink! anchor (endpoint, amount paid, receipt hash).
+Anyone can check a session against the chain with `portal-meter session-verify`, or `verifySellerSession` from `portal-meter/verify`:
+the seller's public log, the payer-signed heads in the `Redeemed` events, and each batch's ink! anchor (endpoint, amount paid, receipt
+hash). Before the first batch it answers NOT YET, never ACCEPT.
 
 `pUSD` (asset 7777) is Portaldot's own test dollar: any builder can get it from the native exchange, so this works with real testnet
 funds and no help from us.
@@ -182,6 +311,8 @@ Sessions, on the same testnet (everything in [`deployments/sessions.json`](deplo
 | Hosted provider registers endpoint 3 in Solidity and lists its public URL in ink!, **one Ethereum tx** | `0xeca4784ca0ba03ce7f110cbdc9af984dc2956f8d881edb5577261fcd7fd27b2c` | [282234](https://scanner-testnet-v3.portaldot.dev/#/blocks/282234?tab=events) |
 | Buyer opens the public demo session | `0x083042840d18dc07bf182cc0160181ed918246f38b69cd9687835783bd488572` | [282419](https://scanner-testnet-v3.portaldot.dev/#/blocks/282419?tab=events) |
 | **137 requests from 3 sessions settled**: redeem in Solidity + anchor in ink!, **one Ethereum tx**, signed in the Worker | `0xe5038746f42ed4f19ca896d7f80a0b04c3bf6335ca1f3e688e15dba1aded7f09` | [282559](https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events) |
+| Five lines from a terminal: a buyer opens a 0.25 pUSD session with the CLI | `0xc7dcc4a5cb08ef64b04d2874cb12119215afaeb8d89ed9d558a42bbc4dd706c6` | [329592](https://scanner-testnet-v3.portaldot.dev/#/blocks/329592?tab=events) |
+| Its one paid request settled: redeem in Solidity + anchor in ink!, **one Ethereum tx** | `0x24aa5a1947432405911e0cd0bd2ce4f6e600901c6b2390eb91f5e8d89a18b770` | [329697](https://scanner-testnet-v3.portaldot.dev/#/blocks/329697?tab=events) |
 
 `MeterSession` was deployed twice: an independent review before launch found problems that needed a contract change, so
 `0xCc2aBc8A…` replaced `0xeA6bf3B9…`. The first deployment and its measurement are kept in `deployments/proof/`.
@@ -217,8 +348,8 @@ Requirements: Node.js 20+, [Foundry](https://getfoundry.sh) for the contract tes
 ```bash
 npm ci --ignore-scripts
 (cd contracts/evm && forge build && forge test)   # 42 Solidity tests: unit, fuzz, invariant
-(cd contracts/ink/meter_registry && cargo test)   # 8 ink! unit tests (Rust, ink! 5.1.1)
-npm test                                           # 72 Node tests, incl. end to end on a local anvil chain
+(cd contracts/ink/meter_registry && cargo test)   # 8 ink! unit tests (Rust, ink! 5.1.1), last run in CI on 1 Nov
+npm test                                           # 73 Node tests, incl. end to end on a local anvil chain
 node scripts/probe.mjs                             # re-checks the Portaldot facts this project relies on (read-only)
 ```
 
@@ -266,7 +397,7 @@ npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet
 | `src/` | metering core (`meter.mjs`), session protocol and client, escrow seller and buyer, verifier, SCALE encoder without polkadot.js, EVM and ink! clients |
 | `worker/` | the hosted seller on Cloudflare Workers |
 | `examples/` | a paid API in thirty lines, and `paid-indexer/`: a separate consumer of the package (Node.js and Cloudflare Workers) with its testnet run log |
-| `bin/portal-meter.mjs` | command line: `status`, `verify`, `buy`, `serve` |
+| `bin/portal-meter.mjs` | command line: `status`, `verify`, `buy`, `serve`, `register`, `set-url`, `session-open`, `session-buy`, `session-close`, `session-verify` |
 | `scripts/` | key generation (testnet only), network probe, deployment + live demo, pitch deck builder |
 | `test/` | Node tests, including end to end on a local anvil chain |
 | `demo/` | the live page (static, served by the hosted seller) |
