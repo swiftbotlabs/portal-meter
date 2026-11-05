@@ -62,9 +62,11 @@ npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev --s
 `npm i https://portal-meter.swiftbotlab.workers.dev/source/portal-meter-0.1.0.tgz`.
 
 What we got, line by line, on 5 Nov 2026, with the package installed from an `npm pack` of this repository, which is what the mirror
-serves (long hashes shortened here only):
+serves. Here only, JSON bodies are condensed to one line, long hashes shortened, and line 5 shows its verdict line:
 
 ```text
+npm WARN deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm WARN deprecated @substrate/connect@0.8.11: versions below 1.x are no longer maintained
 added 79 packages in 13s
 { "error": "payment required", "accepts": [ { … "provider": "0xE13A4d566A1f6492C1511EF100DC0417ccE18E59", "endpointId": 3, "tokenSymbol": "pUSD", "price": "10000", … } ] }
 session 0xbf59f966153d082007c9a1b36c6361dc1365adc1522c71badc1c6d0f7f1778ab: budget 0.25, tx 0xc7dcc4a5…06c6, block 329592, state in s.json
@@ -87,8 +89,8 @@ ACCEPT    1 request in the log, 1 batch on-chain
 ```
 
 Opening locked 11.55 tPOT of storage deposit and 0.25 pUSD. `npx portal-meter session-close --session s.json --keys buyer.env`
-returns the unspent 0.24 pUSD and two thirds of that deposit (7.67 tPOT when we measured it) from 15 minutes after expiry. Anyone can check that
-session without a key:
+returns the unspent 0.24 pUSD and two thirds of that deposit (7.67 tPOT when we measured it) from 15 minutes after expiry.
+Anyone can check that session without a key:
 `npx portal-meter session-verify https://portal-meter.swiftbotlab.workers.dev --id 0xbf59f966153d082007c9a1b36c6361dc1365adc1522c71badc1c6d0f7f1778ab --provider 0xE13A4d566A1f6492C1511EF100DC0417ccE18E59 --endpoint 3`.
 
 ## What one request costs on-chain
