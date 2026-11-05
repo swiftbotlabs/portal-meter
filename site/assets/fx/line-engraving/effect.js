@@ -1,3 +1,4 @@
+// From taste-skill (MIT, (c) 2026 Leonxlnx), see LICENSE in this folder
 // line-engraving: tone carried by dense parallel lines that swell in the shadows and thin to hairlines
 // in the light, bending around the form, like a banknote or an etched plate. One ink on paper.
 // Drawn once; it only moves when drift is above 0.

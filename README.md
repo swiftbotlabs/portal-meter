@@ -423,6 +423,7 @@ The security review before launch was done by a reviewer who had not written the
   `server/seller.py`, here `src/seller.mjs`). New for Portaldot during the Hacker House: prepaid sessions (`MeterSession`,
   hash-chained vouchers, the meter, the session client), the ink! registry, cross-VM settlement in one Ethereum transaction
   and its SCALE encoder, the Cloudflare Worker seller, the settler, the verifier and the paid-indexer example.
+- [taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT, (c) 2026 Leonxlnx): the effect runtime behind the landing page's engraved hero plate, `site/assets/fx/` (`fx.js`, `line-engraving/`), with its LICENSE in that folder.
 - [forge-std](https://github.com/foundry-rs/forge-std) v1.16.2 (MIT/Apache-2.0), vendored unmodified under
   `contracts/evm/lib/`, tests only. [ink!](https://github.com/use-ink/ink) 5.1.1 (Apache-2.0).
 - [ethers](https://github.com/ethers-io/ethers.js) 6.16.0 (MIT), [polkadot.js](https://github.com/polkadot-js/api) 16.5.6

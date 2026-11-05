@@ -1,3 +1,4 @@
+// From taste-skill (MIT, (c) 2026 Leonxlnx), see LICENSE in this folder
 /*
   fx.js - the taste-skill effects runtime. One ES module, no dependencies.
 
