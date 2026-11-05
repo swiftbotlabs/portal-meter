@@ -19,6 +19,8 @@ test('every documented entry point resolves and exports what a seller and a buye
   assert.equal(settle.CALLS_SPEC_3002.specVersion, 3002);
   const address = await import('portal-meter/address');
   for (const k of ['parseAddress', 'ss58Decode', 'ss58Encode', 'BadInput']) assert.equal(typeof address[k], 'function', k);
+  const verify = await import('portal-meter/verify');
+  for (const k of ['verifySession', 'verifySellerSession', 'readRedemptions', 'fetchLog']) assert.equal(typeof verify[k], 'function', k);
 });
 
 test('the testnet deployment ships as data', () => {
@@ -26,6 +28,8 @@ test('the testnet deployment ships as data', () => {
   assert.equal(d.chainId, 420420777);
   assert.match(d.sessionContract, /^0x[0-9a-fA-F]{40}$/);
   assert.match(d.registryAccountId, /^0x[0-9a-f]{64}$/);
+  const t = createRequire(import.meta.url)('portal-meter/deployments/testnet.json');
+  assert.match(t.registry.selectors.anchor, /^0x[0-9a-f]{8}$/);
 });
 
 test('internals stay internal: deep imports are refused', async () => {

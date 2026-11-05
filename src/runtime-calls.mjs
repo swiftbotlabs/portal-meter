@@ -59,6 +59,17 @@ export function batchAll(calls, encoded) {
   return hexlify(concat([Uint8Array.from(calls.utilityBatchAll), compact(encoded.length), ...encoded]));
 }
 
+export const INK_REGISTER_SELECTOR = '0x82079ad5';
+export const INK_SET_URI_SELECTOR = '0x5f8e7ffc';
+const MAX_URI_BYTES = 96; // MeterRegistry::MAX_URI_LEN
+
+/** Input of MeterRegistry.register_endpoint(endpoint_id, uri) or set_uri(endpoint_id, uri): pass the selector. */
+export function inkUriData(selector, endpointId, uri) {
+  const u = new TextEncoder().encode(uri);
+  if (u.length === 0 || u.length > MAX_URI_BYTES) throw new RangeError(`the URL must be 1 to ${MAX_URI_BYTES} bytes`);
+  return hexlify(concat([getBytes(selector), le(endpointId, 4), compact(u.length), u]));
+}
+
 /** Input of the ink! message MeterRegistry.record(endpoint_id, request_id, outcome, amount, receipt_hash). */
 export function inkRecordData({ endpointId, requestId, outcome = OUTCOME_SERVED, amount, receiptHash }) {
   return hexlify(concat([getBytes(INK_RECORD_SELECTOR), le(endpointId, 4), getBytes(requestId), Uint8Array.of(outcome), le(amount, 16), getBytes(receiptHash)]));

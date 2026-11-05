@@ -10,7 +10,9 @@
     "./chain": "./src/session-chain.mjs",
     "./settle": "./src/settler.mjs",
     "./address": "./src/address.mjs",
+    "./verify": "./src/session-verify.mjs",
     "./deployments/sessions.json": "./deployments/sessions.json",
+    "./deployments/testnet.json": "./deployments/testnet.json",
     "./package.json": "./package.json"
   },
   "files": [

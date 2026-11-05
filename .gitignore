@@ -14,3 +14,5 @@ deployments/testnet.partial.json
 deployments/.seller-state.json*
 deployments/sessions.partial.json
 worker/public/
+.dev.vars
+.wrangler/

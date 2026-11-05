@@ -1,7 +1,10 @@
 // The hand-written SCALE encoder against a vector produced by polkadot.js from the live PortaldotV3 metadata (spec 3002).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CALLS_SPEC_3002 as C, batchAll, compact, contractsCall, inkRecordData, reviveCall } from '../src/runtime-calls.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { CALLS_SPEC_3002 as C, INK_REGISTER_SELECTOR, INK_SET_URI_SELECTOR, INK_RECORD_SELECTOR, batchAll, compact, contractsCall, inkRecordData, inkUriData, reviveCall } from '../src/runtime-calls.mjs';
+import { PATHS } from '../src/config.mjs';
 import { pendingSessions, settleInput, shouldSettle } from '../src/session-settle.mjs';
 
 const VECTOR = '0x01020850019e7ad2aa754a0eba70cfbd1db01d25ef97e5781e000700bca0650102350c000b00407a10f35af101deadbeef1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111506003621669d774ff38e377992f276b1e320fd9836aad3581f688e4c7b8a1abf35d7000700bca0650102350c00006501ad11afc403000000abababababababababababababababababababababababababababababababab01d20a1feb8ca954ab0000000000000000cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd';
@@ -58,4 +61,21 @@ test('settleInput pairs one redeem and one anchor per session', () => {
   assert.ok(data.startsWith('0x010210')); // utility.batchAll, compact(4) calls
   const without = settleInput([state()], { calls: C, sessionContract: '0x9E7Ad2Aa754A0EBA70CFbd1db01d25ef97e5781e', registryAccountId: null, endpointId: 3 });
   assert.ok(without.startsWith('0x010204'));
+});
+
+test('ink! URL messages: selectors from the contract metadata, SCALE compact length, the 96-byte limit of the contract', () => {
+  const meta = JSON.parse(readFileSync(join(PATHS.root, 'contracts', 'ink', 'meter_registry', 'artifact', 'meter_registry.contract'), 'utf8'));
+  const sel = label => meta.spec.messages.find(m => m.label === label).selector;
+  assert.equal(INK_REGISTER_SELECTOR, sel('register_endpoint'));
+  assert.equal(INK_SET_URI_SELECTOR, sel('set_uri'));
+  assert.equal(INK_RECORD_SELECTOR, sel('record'));
+  // the short form the CLI sent on the testnet (endpoint 4, block 323203): one-byte length
+  const url = 'http://127.0.0.1:8788/v1/transfers/{address}';
+  assert.equal(inkUriData(INK_REGISTER_SELECTOR, 4, url), '0x82079ad504000000' + (url.length << 2).toString(16) + Buffer.from(url).toString('hex'));
+  // longer than 63 bytes: a two-byte compact length, which the old one-byte form could not express
+  const long = 'https://paid-indexer.swiftbotlab.workers.dev/v1/transfers/{address}';
+  assert.ok(long.length > 63);
+  assert.equal(inkUriData(INK_SET_URI_SELECTOR, 4, long), '0x5f8e7ffc04000000' + hex(compact(long.length)) + Buffer.from(long).toString('hex'));
+  assert.throws(() => inkUriData(INK_SET_URI_SELECTOR, 4, ''), /1 to 96 bytes/);
+  assert.throws(() => inkUriData(INK_SET_URI_SELECTOR, 4, 'x'.repeat(97)), /1 to 96 bytes/);
 });

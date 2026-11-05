@@ -3,7 +3,7 @@
 // share it, so this page takes the session's place from the seller; a real client keeps its own count and head.
 import { JsonRpcProvider, Wallet, keccak256, toUtf8Bytes, id as eventTopic } from 'ethers';
 import { SessionClient } from '../src/session-client.mjs';
-import { verifyLog } from '../src/session.mjs';
+import { verifySession } from '../src/session-verify.mjs';
 import { sessionIface } from '../src/session-chain.mjs';
 import { RawInkRegistry } from '../src/inkraw.mjs';
 import { formatUnits } from '../src/protocol.mjs';
@@ -120,18 +120,17 @@ export async function setupTry(s, net) {
       }
       const topic = eventTopic('Redeemed(bytes32,uint32,bytes32,uint96,uint96,uint32)');
       const logs = await evm.getLogs({ address: s.sessionContract, topics: [topic, demo.id], fromBlock: demo.openBlock, toBlock: 'latest' });
-      const redemptions = logs.map(l => sessionIface.parseLog(l)).map(p => ({ head: p.args.head, count: Number(p.args.count), cumulative: p.args.cumulative }));
-      const v = verifyLog(demo.id, rows, redemptions);
+      const redemptions = logs.map(l => sessionIface.parseLog(l)).map(p => ({
+        head: p.args.head.toLowerCase(), count: Number(p.args.count), cumulative: p.args.cumulative, paid: p.args.paid, endpointId: Number(p.args.endpointId),
+      })).sort((a, b) => a.count - b.count);
       const reg = new RawInkRegistry({ rpc: net.subRpc, accountId: s.registryAccountId, origin: s.readOrigin, selectors: s.selectors });
-      for (const r of redemptions) {
-        const a = await reg.anchor(s.endpoint.provider, r.head).catch(() => null);
-        v.checks.push({ name: `ink! registry holds the anchor for the batch up to request ${r.count}`, ok: !!a, detail: a ? `block ${a.block}` : 'not found' });
-      }
-      const ok = v.checks.every(c => c.ok);
+      // each batch: the log reaches the payer-signed head, and its ink! anchor holds the endpoint, the amount paid and the receipt hash
+      const v = await verifySession({ session: demo.id, rows, redemptions, endpointId: s.endpoint.id, anchor: head => reg.anchor(s.endpoint.provider, head) });
+      const ok = v.ok;
       const last = rows.slice(-5).reverse().map(r => `<tr><td>${r.n}</td><td class="mono">${esc(short(r.requestHash, 8))}</td><td class="mono">${esc(short(r.responseHash, 8))}</td></tr>`).join('');
       const batches = redemptions.map(r => `${r.count}`).join(', ');
       out.innerHTML = `<div class="verdict ${ok ? 'ACCEPT' : 'REJECT'}">${ok ? 'ACCEPT' : 'REJECT'}</div><ul class="checks">${v.checks.map(c =>
-        `<li><span class="m ${c.ok ? 'PASS' : 'FAIL'}">${c.ok ? 'PASS' : 'FAIL'}</span><span><b>${esc(c.name)}</b> <span class="d">${esc(short(String(c.detail), 10))}</span></span></li>`).join('')}</ul>
+        `<li><span class="m ${c.ok ? 'PASS' : 'FAIL'}">${c.ok ? 'PASS' : 'FAIL'}</span><span><b>${esc(c.name)}</b> <span class="d">${esc(/^0x[0-9a-f]{20,}$/i.test(String(c.detail)) ? short(String(c.detail), 10) : String(c.detail))}</span></span></li>`).join('')}</ul>
         <p class="muted">Session ${esc(short(demo.id, 8))}: ${rows.length} requests in the public log, redeemed on-chain in batches up to request ${esc(batches || 'none yet')}. The latest requests:</p>
         <div class="table-scroll"><table><thead><tr><th>request</th><th>request hash</th><th>response hash</th></tr></thead><tbody>${last}</tbody></table></div>`;
     } catch (e) {

@@ -8,6 +8,7 @@
 //
 // Sell an API, buy from one (deployments/sessions.json):
 //   portal-meter register --keys <env file> --key-var NAME --asset 7777 --price 0.01 --payee 0x.. --url https://..
+//   portal-meter set-url <endpoint id> --keys <env file> --key-var NAME --url https://..     (move an endpoint to a new host)
 //   portal-meter session-open <endpoint id> --keys <env file> --budget 0.5 [--days 7] --out session.json
 //   portal-meter session-buy <url> --session session.json [--max 0.05]
 //   portal-meter session-close --session session.json
@@ -38,7 +39,7 @@ import { erc20, sendTx, settlementIface } from '../src/evm.mjs';
 import { sessionContract, sessionIface } from '../src/session-chain.mjs';
 import { sessionIdFor } from '../src/session.mjs';
 import { SessionClient } from '../src/session-client.mjs';
-import { CALLS_SPEC_3002 as CALLS, batchAll, contractsCall, reviveCall } from '../src/runtime-calls.mjs';
+import { CALLS_SPEC_3002 as CALLS, INK_REGISTER_SELECTOR, INK_SET_URI_SELECTOR, batchAll, contractsCall, inkUriData, reviveCall } from '../src/runtime-calls.mjs';
 import { RUNTIME_PALLETS_ADDRESS } from '../src/session-settle.mjs';
 
 const [cmd, ...rest] = process.argv.slice(2);
@@ -161,24 +162,37 @@ if (cmd === 'status') {
   const assetId = Number(flag('--asset'));
   const payee = flag('--payee', wallet.address);
   if (!uri || !Number.isInteger(assetId)) die('usage: portal-meter register --keys f --asset <id> --price 0.01 --payee 0x.. --url https://..');
-  if (new TextEncoder().encode(uri).length > 63) die('--url must be at most 63 bytes');
+  if (new TextEncoder().encode(uri).length > 96) die('--url must be at most 96 bytes');
   const token = precompileAddress(assetId);
   const decimals = Number(await erc20(token, evm).decimals());
   const price = parseUnits(flag('--price', '0.01'), decimals);
   const s = settlementContract(dep.settlement, evm);
   const id = Number(await s.endpointCount()) + 1;
-  const le = new Uint8Array(4);
-  new DataView(le.buffer).setUint32(0, id, true);
-  const u = new TextEncoder().encode(uri);
   const weight = { refTime: 8_000_000_000n, proofSize: 300_000n };
   const r = await sendTx(wallet, {
     to: RUNTIME_PALLETS_ADDRESS, value: 0n,
     data: batchAll(CALLS, [
       reviveCall(CALLS, { dest: dep.settlement, weight, depositLimit: 40n * 10n ** 14n, data: settlementIface.encodeFunctionData('registerEndpoint', [payee, token, price, 600]) }),
-      contractsCall(CALLS, { dest: dep.registry.accountId, weight, data: hexlify(new Uint8Array([0x82, 0x07, 0x9a, 0xd5, ...le, u.length << 2, ...u])) }),
+      contractsCall(CALLS, { dest: dep.registry.accountId, weight, data: inkUriData(INK_REGISTER_SELECTOR, id, uri) }),
     ]),
   });
   console.log(`endpoint ${id}: ${flag('--price', '0.01')} per request, tx ${r.hash}, block ${r.blockNumber}`);
+} else if (cmd === 'set-url') {
+  // the URL buyers find in the ink! registry, for an endpoint the key already owns: one Ethereum transaction
+  const wallet = keyWallet('PORTALDOT_EVM_PROVIDER_KEY');
+  const id = Number(positional[0]);
+  const uri = flag('--url');
+  if (!Number.isInteger(id) || id <= 0 || !uri) die('usage: portal-meter set-url <endpoint id> --keys f --url https://..');
+  if (new TextEncoder().encode(uri).length > 96) die('--url must be at most 96 bytes');
+  const ep = await readEndpoint(settlementContract(dep.settlement, evm), id);
+  if (ep.provider.toLowerCase() !== wallet.address.toLowerCase()) die(`endpoint ${id} belongs to ${ep.provider}, not to this key`);
+  const weight = { refTime: 8_000_000_000n, proofSize: 300_000n };
+  const r = await sendTx(wallet, {
+    to: RUNTIME_PALLETS_ADDRESS, value: 0n,
+    data: batchAll(CALLS, [contractsCall(CALLS, { dest: dep.registry.accountId, weight, data: inkUriData(INK_SET_URI_SELECTOR, id, uri) })]),
+  });
+  const rec = rawRegistry ? await rawRegistry.endpoint(wallet.address, id) : null;
+  console.log(`endpoint ${id}: URL in ink! is now ${rec ? rec.uri : '(unread)'}, tx ${r.hash}, block ${r.blockNumber}`);
 } else if (cmd === 'session-open') {
   const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
   const endpointId = Number(positional[0]);
@@ -226,6 +240,6 @@ if (cmd === 'status') {
   const r = await sendTx(wallet, { to: ses.sessionContract, data: sessionContract(ses.sessionContract, wallet).interface.encodeFunctionData('close', [j.session]) });
   console.log(`closed: tx ${r.hash}, block ${r.blockNumber}`);
 } else {
-  die('usage: portal-meter status | verify <receipt> [--body f] | buy <url> --keys f | serve --keys f | register | session-open | session-buy | session-close');
+  die('usage: portal-meter status | verify <receipt> [--body f] | buy <url> --keys f | serve --keys f | register | set-url | session-open | session-buy | session-close');
 }
 if (cmd !== 'serve') process.exit(0);
