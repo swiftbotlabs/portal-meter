@@ -1,0 +1,23 @@
+# The paid indexer example, hosted on Cloudflare Workers (run from examples/paid-indexer after `npm install`):
+#   npx wrangler@4.151.1 deploy -c worker/wrangler.toml
+#   npx wrangler@4.151.1 secret put PROVIDER_KEY -c worker/wrangler.toml   (the endpoint's testnet provider key, from stdin)
+name = "paid-indexer"
+main = "index.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[[durable_objects.bindings]]
+name = "LEDGER"
+class_name = "IndexerLedger"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["IndexerLedger"]
+
+[vars]
+ENDPOINT_ID = "4"
+PRICE = "10000"
+EVM_RPC = "https://test-evm-rpc-v3.portaldot.dev"

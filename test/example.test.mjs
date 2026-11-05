@@ -13,11 +13,13 @@ import { PATHS } from '../src/config.mjs';
 const EXAMPLE = join(PATHS.root, 'examples', 'paid-indexer');
 
 test('the example only imports public entry points of the package', () => {
-  for (const f of readdirSync(EXAMPLE).filter(f => f.endsWith('.mjs'))) {
+  const files = [...readdirSync(EXAMPLE).filter(f => f.endsWith('.mjs')), 'worker/index.mjs'];
+  assert.ok(files.length >= 7, 'the example files are there');
+  for (const f of files) {
     const src = readFileSync(join(EXAMPLE, f), 'utf8');
     assert.doesNotMatch(src, /from '\.\.\/\.\.\//, `${f} reaches into the repository`);
     for (const m of src.matchAll(/from '(portal-meter[^']*)'/g)) {
-      assert.match(m[1], /^portal-meter(\/(session-client|chain|settle|address))?$/, `${f}: ${m[1]}`);
+      assert.match(m[1], /^portal-meter(\/(session-client|chain|settle|address|verify|deployments\/(sessions|testnet)\.json))?$/, `${f}: ${m[1]}`);
     }
   }
 });

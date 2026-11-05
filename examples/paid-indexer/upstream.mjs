@@ -45,7 +45,13 @@ async function readCapped(res, maxBytes) {
     }
     parts.push(value);
   }
-  return new TextDecoder().decode(Buffer.concat(parts));
+  const all = new Uint8Array(size);
+  let o = 0;
+  for (const part of parts) {
+    all.set(part, o);
+    o += part.length;
+  }
+  return new TextDecoder().decode(all);
 }
 
 /** The explorer sends an amount either as a decimal string or as a 0x-prefixed big-endian u128. Null if neither. */
@@ -113,11 +119,13 @@ export function explorerUpstream({ base = EXPLORER_API, fetchImpl = globalThis.f
       try {
         res = await fetchImpl(base + path, {
           headers: { accept: 'application/json', 'user-agent': 'portal-meter-example/0.1' },
-          redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
+          // 'manual', not 'error': Cloudflare Workers accept only follow or manual; a redirect is refused below
+          redirect: 'manual', signal: AbortSignal.timeout(timeoutMs),
         });
       } catch {
         throw new UpstreamError('the explorer did not answer');
       }
+      if (res.status >= 300 && res.status < 400) throw new UpstreamError('the explorer redirected, not followed');
       if (!res.ok) throw new UpstreamError(`the explorer answered HTTP ${res.status}`);
       const text = await readCapped(res, maxBytes);
       try {

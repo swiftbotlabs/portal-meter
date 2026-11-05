@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { Wallet, hexlify, randomBytes } from 'ethers';
 import { createMeter, MemoryLedger } from 'portal-meter';
 import { SessionClient, checkReceipt } from 'portal-meter/session-client';
+import { batchHash, verifySession } from 'portal-meter/verify';
 import { createApp, accountOf } from '../app.mjs';
 import { amountOf, explorerUpstream, formatNative, normaliseTransfers } from '../upstream.mjs';
 import { FileLedger } from '../file-ledger.mjs';
@@ -90,7 +91,7 @@ test('one paid call: 402, voucher, 200 with normalised data and a receipt the cl
   assert.equal(body.transfers[1].raw, '31000000000000000');
   assert.equal(body.skipped, 1, 'the broken row is dropped, not passed on');
   assert.equal(c.explorer.seen[0].url, `https://scanner-testnet-v3-api.portaldot.dev/accounts/${BUYER}/transfers`);
-  assert.equal(c.explorer.seen[0].init.redirect, 'error');
+  assert.equal(c.explorer.seen[0].init.redirect, 'manual', 'redirects are never followed (Workers refuse redirect: error)');
   const st = await c.ledger.get(c.session);
   assert.equal(st.count, 1);
   assert.equal(st.cumulative, '10000');
@@ -137,8 +138,8 @@ test('explorer down: not charged, and the next request reuses the same step', as
   assert.equal((await c.ledger.get(c.session)).cumulative, '10000', 'charged once');
 });
 
-test('oversized, non-JSON and error answers from the explorer are not charged', async t => {
-  for (const explorer of [fakeExplorer({ raw: 'x'.repeat(300 * 1024) }), fakeExplorer({ raw: '<html>' }), fakeExplorer({ status: 500 }), fakeExplorer({ body: { nope: true } })]) {
+test('oversized, non-JSON, redirected and error answers from the explorer are not charged', async t => {
+  for (const explorer of [fakeExplorer({ raw: 'x'.repeat(300 * 1024) }), fakeExplorer({ raw: '<html>' }), fakeExplorer({ status: 500 }), fakeExplorer({ status: 302, raw: '' }), fakeExplorer({ body: { nope: true } })]) {
     const c = setup(t, explorer);
     const r = await c.client().get(`${base}/v1/transfers/${BUYER}`);
     assert.equal(r.status, 502);
@@ -181,4 +182,19 @@ test('the file ledger survives a restart and is private', async () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('the public log replays against a batch, and an edited log does not', async t => {
+  const c = setup(t);
+  const cl = c.client();
+  for (const a of [BUYER, BUYER_H160, BUYER]) assert.equal((await cl.get(`${base}/v1/transfers/${a}`)).status, 200);
+  const rows = (await (await c.call(`${base}/v1/session/${c.session}/log`)).json()).rows;
+  const v = (await c.ledger.get(c.session)).lastVoucher;
+  // what the chain would hold after the settler redeemed this voucher: the Redeemed event and the ink! anchor
+  const redemptions = [{ count: v.count, head: v.head, cumulative: BigInt(v.cumulative), paid: BigInt(v.cumulative), endpointId: 9, block: 1 }];
+  const anchor = async head => (head === v.head ? { endpointId: 9, amount: v.cumulative, receiptHash: batchHash(c.session, v.cumulative, v.count, v.head), block: 1 } : null);
+  const ok = await verifySession({ session: c.session, rows, redemptions, anchor, endpointId: 9 });
+  assert.equal(ok.ok, true, JSON.stringify(ok.checks));
+  const edited = rows.map((r, i) => (i === 0 ? { ...r, requestHash: '0x' + '44'.repeat(32) } : r));
+  assert.equal((await verifySession({ session: c.session, rows: edited, redemptions, anchor })).ok, false);
 });

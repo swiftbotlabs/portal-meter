@@ -1,11 +1,12 @@
 # Run log: the paid indexer, installed from a clean folder and settled on the Portaldot V3 testnet
 
-4 November 2026, 17:19 to 17:24 UTC. Run by the Portal Meter authors with our own testnet keys: provider
+Steps 1 to 7: 4 November 2026, 17:19 to 17:24 UTC, seller on our machine. Steps 8 and 9: 5 November, 00:01 to 00:13 UTC,
+the last batch of that session, then the seller on a public host. Run by the Portal Meter authors with our own testnet keys: provider
 `0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599` (the key behind endpoints 1 and 2), buyer `0x0118d896dC979963341e9449218e63E158CB6AbA`.
 Keys stay in a `0600` file and are never printed. Test tokens have no value. Output below is copied from the terminal;
 long JSON lines are shortened with `…`.
 
-Three Ethereum transactions in all: register (both VMs), open the session, settle the batch (both VMs).
+Steps 1 to 7 take three Ethereum transactions: register (both VMs), open the session, settle the batch (both VMs).
 
 ## 1. Install from an empty folder
 
@@ -138,9 +139,94 @@ data      4 of 4 transfers of 5EmsuTbjRoX4EBA1QGcNvDc3FHs7kvKj6rDPZk9L2zFTuzxA, 
 
 Request 3 is signed and served but not settled yet: one request waiting is below this run's `--settle-min 2`.
 
+## 8. 5 November: request 3 settled, and the whole session checked against the chain
+
+The package was packed again from commit `520e2da` (48 files, byte-identical to that commit, sha256
+`107cf6990a4ded023d63c1cfe39dd024c94bda7e09d4058dfb2fe5ecf87bbd9d`), which adds `portal-meter/verify`, and installed over the
+same folder; `npm test` 10 of 10. The seller was started again with `--settle-min 1`:
+
+```text
+{"at":"2026-11-05T00:02:12.390Z","event":"listening","url":"http://127.0.0.1:8788/","endpointId":4,"provider":"0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599","price":"10000"}
+{"at":"2026-11-05T00:02:32.673Z","check":"settle","settled":true,"tx":"0x148ffa17ef23093aa2eb0d59aa9b6115871c33aad69e16db7bd37d08c074c418","block":327181,"requests":1}
+
+$ node verify.mjs http://127.0.0.1:8788 --session session.json --from 323209
+batch     up to request 2: 20000 paid, block 323215, tx 0xfed599131a6419b4b6732da18e64f2350f96acd3cf86e1a05dbd33a59889ba4e
+batch     up to request 3: 10000 paid, block 327181, tx 0x148ffa17ef23093aa2eb0d59aa9b6115871c33aad69e16db7bd37d08c074c418
+PASS      log replays from the session genesis: 3 requests
+PASS      batch up to request 2 matches the payer-signed head on-chain (responses 1 to 1 acknowledged): 0x3a1bd8b6fd6afd124eb84858d9e6c734ca02162a812465ca1fe8759601085fec
+PASS      batch up to request 3 matches the payer-signed head on-chain (responses 1 to 2 acknowledged): 0x0d906c3e345c1787c6238c533b39ec164d2a0ac1ab388fd23c3a6dc8a537c0dd
+PASS      ink! anchor of the batch up to request 2: endpoint, amount and receipt hash: block 323215, 20000 paid
+PASS      ink! anchor of the batch up to request 3: endpoint, amount and receipt hash: block 327181, 10000 paid
+ACCEPT    3 requests in the log, 2 batches on-chain
+```
+
+The same check for a session id that was never redeemed fails closed: `FAIL at least one batch of this session is redeemed
+on-chain: none found`, `REJECT`, exit code 1. Block [327181](https://scanner-testnet-v3.portaldot.dev/#/blocks/327181?tab=events)
+is the second batch. The local seller was then stopped for good.
+
+## 9. 5 November: the seller moves to a public host
+
+The same app runs on Cloudflare Workers from [`worker/`](worker), deployed from the installed folder as
+[paid-indexer.swiftbotlab.workers.dev](https://paid-indexer.swiftbotlab.workers.dev/), with the provider's testnet key as a
+Worker secret (read from stdin, never printed). Then the endpoint's URL in the ink! registry was moved, one transaction:
+
+```text
+$ npx portal-meter set-url 4 --keys provider.env --key-var PORTALDOT_EVM_PROVIDER_KEY --url 'https://paid-indexer.swiftbotlab.workers.dev/v1/transfers/{address}'
+endpoint 4: URL in ink! is now https://paid-indexer.swiftbotlab.workers.dev/v1/transfers/{address}, tx 0xb9b558b507132728982053cb2df6df9999237318bdb8e54f2991aa68cc48a5fd, block 327203
+$ npx portal-meter session-open 4 --keys buyer.env --budget 0.06 --days 7 --out session-hosted.json
+session 0xd0a658f34025006d64d0e9a1d7ba36352d2ad18300cab8d88bd73c255f5620f5: budget 0.06, tx 0xb98a40636e2d2f1a27408d1c08d912849073222bbf28ebac2fa291f6e20ae84e, block 327206, state in session-hosted.json
+```
+
+The first five calls to the hosted seller failed, and none was charged:
+
+```text
+HTTP 402  quote: 10000 base units of pUSD for endpoint 4, provider 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599, request 0x6dd574fb41756bedb4f73ac91d699ad15f580c2a6cb72ca20a0af37d3922b6f6
+voucher   1 signed: cumulative 10000, head 0xd65fba62cc6c1fc3717c2f62be661ed23d4a540054db35569bfe85769501d368
+HTTP 502  not charged: { "error": "the explorer did not answer", "charged": false }
+```
+
+Cause: `upstream.mjs` asked fetch for `redirect: 'error'`, which Node.js accepts and Cloudflare Workers refuse. It now uses
+`redirect: 'manual'` and refuses any redirect itself (tested). After the fix the same client signed the same first step again,
+since nothing had been charged, and five paid calls went through:
+
+```text
+$ node buy.mjs https://paid-indexer.swiftbotlab.workers.dev/v1/transfers/5C69HXuCHWTgFcDRUAmwEqgWoXdVwAfmJspoda2yZWXcwE8P --session session-hosted.json
+HTTP 402  quote: 10000 base units of pUSD for endpoint 4, provider 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599, request 0x6dd574fb41756bedb4f73ac91d699ad15f580c2a6cb72ca20a0af37d3922b6f6
+voucher   1 signed: cumulative 10000, head 0xd65fba62cc6c1fc3717c2f62be661ed23d4a540054db35569bfe85769501d368
+HTTP 200  receipt checked: response 0xae41989700b6c3064e566ebb9e6228a044c168963dc725edff5c7a0f1056acc0, signed by the provider
+data      5 of 5 transfers of 5C69HXuCHWTgFcDRUAmwEqgWoXdVwAfmJspoda2yZWXcwE8P, from Portaldot explorer indexer, https://scanner-testnet-v3-api.portaldot.dev
+…
+voucher   5 signed: cumulative 50000, head 0x7a810ff59473ae2175100237c14c94e91dd9ca2492d565fe844896289eae79d5
+HTTP 200  receipt checked: response 0x8b1b2c039a4bb0be0d63157c9ffebaeeb584b0880e38b24bfe4199b3077de6d7, signed by the provider
+data      1 of 1 transfers of 5HA1x5wMfYVAPFo5FoP4zoBCPANrpebJESH638v3wYVNwXeW, from Portaldot explorer indexer, https://scanner-testnet-v3-api.portaldot.dev
+```
+
+Nobody pressed anything after that. The Worker's own alarm settled the five requests in one Ethereum transaction, block
+[327272](https://scanner-testnet-v3.portaldot.dev/#/blocks/327272?tab=events) (`assets.Transferred`, `revive.ContractEmitted`,
+`contracts.Called`, `utility.BatchCompleted` in extrinsic 1), and `/health` says so:
+
+```text
+$ curl -s https://paid-indexer.swiftbotlab.workers.dev/health
+{ "ok": true, "configured": true, "requestsWaitingForSettlement": 0, "batches": 1, "requestsSettled": 5, …,
+  "lastResult": { "settled": true, "tx": "0x256d66e1be857c17db6426df75bbda6a35601a1ea1a8b469ff5f77b5da45c892", "block": 327272, "requests": 5 } }
+```
+
+Anyone can run this check, no key needed:
+
+```text
+$ node verify.mjs https://paid-indexer.swiftbotlab.workers.dev --id 0xd0a658f34025006d64d0e9a1d7ba36352d2ad18300cab8d88bd73c255f5620f5 --provider 0x43CA1C7C2551eA0eAD326320f2dA922EfA7C1599 --endpoint 4
+batch     up to request 5: 50000 paid, block 327272, tx 0x256d66e1be857c17db6426df75bbda6a35601a1ea1a8b469ff5f77b5da45c892
+PASS      log replays from the session genesis: 5 requests
+PASS      batch up to request 5 matches the payer-signed head on-chain (responses 1 to 4 acknowledged): 0x7a810ff59473ae2175100237c14c94e91dd9ca2492d565fe844896289eae79d5
+PASS      ink! anchor of the batch up to request 5: endpoint, amount and receipt hash: block 327272, 50000 paid
+ACCEPT    5 requests in the log, 1 batch on-chain
+```
+
+The payee now holds 0.08 pUSD from this example: 0.02 + 0.01 from the first session, 0.05 from this one.
+
 ## What this run does not show
 
-- Outside demand. The provider, the buyer and the seller's machine are ours; the endpoint's URL is `127.0.0.1`.
+- Outside demand. The provider, the buyer and the hosting account are ours.
 - A second team. The example is ours, written against the published package only. The data comes from Portaldot's own
   public explorer, read at under 4 requests per second.
 - Anything about mainnet costs. Test tokens have no value; the deposits are what this testnet charges today.

@@ -22,7 +22,8 @@ data API at 0.01 pUSD per call, on the testnet).
 **Demo video (2:23):** [YouTube](https://youtu.be/sgGdQ-WLum0) or [MP4](https://portal-meter.swiftbotlab.workers.dev/demo/portal-meter-demo.mp4).
 **Pitch deck:** [PDF](https://portal-meter.swiftbotlab.workers.dev/pitch/portal-meter-deck.pdf).
 **Reuse:** [`examples/paid-indexer/`](examples/paid-indexer) installs the package in a folder of its own, sells a different API and settles
-on the testnet; its run log is [RUN.md](examples/paid-indexer/RUN.md).
+on the testnet, hosted at [paid-indexer.swiftbotlab.workers.dev](https://paid-indexer.swiftbotlab.workers.dev/) (endpoint 4); its run
+log is [RUN.md](examples/paid-indexer/RUN.md).
 
 ## Check it in two minutes
 
@@ -79,7 +80,11 @@ ledger, on any runtime with `fetch`. [`examples/sell-an-api.mjs`](examples/sell-
 node bin/portal-meter.mjs register --keys provider.env --asset 7777 --price 0.01 --payee 0x… --url https://you.example/v1/   # one tx, both VMs
 node bin/portal-meter.mjs session-open 3 --keys buyer.env --budget 0.5 --out session.json    # lock a budget, get a capped session key
 node bin/portal-meter.mjs session-buy https://portal-meter.swiftbotlab.workers.dev/v1/asset/7777 --session session.json
+node bin/portal-meter.mjs set-url 3 --keys provider.env --url https://new.example/v1/        # moved hosts: the URL buyers find in ink!
 ```
+
+Anyone can check a session against the chain with `verifySellerSession` from `portal-meter/verify`: the seller's public log, the
+payer-signed heads in the `Redeemed` events, and each batch's ink! anchor (endpoint, amount paid, receipt hash).
 
 `pUSD` (asset 7777) is Portaldot's own test dollar: any builder can get it from the native exchange, so this works with real testnet
 funds and no help from us.
@@ -92,8 +97,12 @@ different API, account transfer history from Portaldot's public explorer indexer
 packed package in an empty folder and run on the testnet: endpoint 4 registered on both VMs in one transaction
 ([block 323203](https://scanner-testnet-v3.portaldot.dev/#/blocks/323203?tab=events)), a session opened, two paid calls, and the
 seller's own settlement loop sent one Ethereum transaction with the Solidity redeem and the ink! anchor
-([block 323215](https://scanner-testnet-v3.portaldot.dev/#/blocks/323215?tab=events)). Every command and output:
-[`examples/paid-indexer/RUN.md`](examples/paid-indexer/RUN.md). The example is ours, not another team's, and its seller ran on our machine.
+([block 323215](https://scanner-testnet-v3.portaldot.dev/#/blocks/323215?tab=events)). The same app then moved to Cloudflare Workers,
+[paid-indexer.swiftbotlab.workers.dev](https://paid-indexer.swiftbotlab.workers.dev/), and `portal-meter set-url` pointed endpoint 4's
+ink! listing there ([block 327203](https://scanner-testnet-v3.portaldot.dev/#/blocks/327203?tab=events)). Five paid calls later its own
+alarm settled them in one transaction ([block 327272](https://scanner-testnet-v3.portaldot.dev/#/blocks/327272?tab=events)), and
+`node verify.mjs https://paid-indexer.swiftbotlab.workers.dev --id 0xd0a658f3…` checks that session against the chain: ACCEPT.
+Every command and output: [`examples/paid-indexer/RUN.md`](examples/paid-indexer/RUN.md). The example is ours, not another team's.
 
 > **Live on the PortaldotV3 testnet since 2026-11-01:** both payment contracts, the ink! registry, the hosted seller, and real
 > requests settled in Solidity and anchored in ink! in one Ethereum transaction. See [Testnet deployment](#testnet-deployment).
@@ -148,7 +157,10 @@ PortaldotV3 testnet: EVM chain id `420420777`, `https://test-evm-rpc-v3.portaldo
 Every Solidity contract we deployed matches this repository byte for byte: `MeterSettlement`, `MeterSession` and the retired
 first `MeterSession` (`0xeA6bf3B9...`, replaced after the security review, source in `contracts/evm-retired-v1/`).
 Checked independently by [Bytematch](https://bytematch-portaldot.vercel.app/repo/swiftbotlabs/portal-meter), another Hacker
-House team's source verifier, on 4 Nov 2026: 3 of 3 exact.
+House team's source verifier, on 4 Nov 2026: 3 of 3 exact ([JSON](https://bytematch-portaldot.vercel.app/v1/repos/swiftbotlabs/portal-meter)).
+Its scan also notes that its own compile of `contracts/evm-retired-v1` stopped at "Stack too deep": that contract only compiles
+with `viaIR`, which the folder's `foundry.toml` sets. `forge build` there gives the deployed code exactly, once the one immutable
+(the settlement address) is filled in.
 
 | Step | Transaction | Block |
 |---|---|---|
@@ -205,7 +217,8 @@ Requirements: Node.js 20+, [Foundry](https://getfoundry.sh) for the contract tes
 ```bash
 npm ci --ignore-scripts
 (cd contracts/evm && forge build && forge test)   # 42 Solidity tests: unit, fuzz, invariant
-npm test                                           # 66 Node tests, incl. end to end on a local anvil chain
+(cd contracts/ink/meter_registry && cargo test)   # 8 ink! unit tests (Rust, ink! 5.1.1)
+npm test                                           # 72 Node tests, incl. end to end on a local anvil chain
 node scripts/probe.mjs                             # re-checks the Portaldot facts this project relies on (read-only)
 ```
 
@@ -252,7 +265,7 @@ npx wrangler@4.151.1 secret put PROVIDER_KEY     # the hosted provider's testnet
 | `contracts/ink/meter_registry/` | `MeterRegistry` (ink! 5): endpoint URLs, outcome anchors, buyer feedback, reputation |
 | `src/` | metering core (`meter.mjs`), session protocol and client, escrow seller and buyer, verifier, SCALE encoder without polkadot.js, EVM and ink! clients |
 | `worker/` | the hosted seller on Cloudflare Workers |
-| `examples/` | a paid API in thirty lines, and `paid-indexer/`: a separate consumer of the package with its testnet run log |
+| `examples/` | a paid API in thirty lines, and `paid-indexer/`: a separate consumer of the package (Node.js and Cloudflare Workers) with its testnet run log |
 | `bin/portal-meter.mjs` | command line: `status`, `verify`, `buy`, `serve` |
 | `scripts/` | key generation (testnet only), network probe, deployment + live demo, pitch deck builder |
 | `test/` | Node tests, including end to end on a local anvil chain |
@@ -267,9 +280,16 @@ The security review before launch was done by a reviewer who had not written the
 
 ## Credits and prior work
 
-- Builds on our MIT-licensed [HSK Meter](https://github.com/swiftbotlabs/hsk-meter) (Oct 2026): the request-id
-  binding and refund-on-failure ideas come from it. The contracts, the ink! registry, the cross-VM settlement, the
-  Portaldot integration and the off-chain code in this repository were written for Portaldot during the Hacker House.
+- Builds on our MIT-licensed [HSK Meter](https://github.com/swiftbotlabs/hsk-meter) (Oct 2026, HashKey Chain, Python and
+  Solidity). Reused as patterns, rewritten here in JavaScript and Solidity, no file copied: the x402-style headers
+  (`PAYMENT-REQUIRED` / `PAYMENT-RESPONSE`, base64 JSON with size caps: HSK `server/protocol.py`, here `src/protocol.mjs`); a
+  request id bound to its payer (HSK `compute_request_id` / `payer_of`, here `MeterSettlement.requestIdFor`, derived
+  differently); a provider refund when a paid request cannot be served, and a request id used once (HSK
+  `HskPayPerRequest.refund`, here `MeterSettlement.refund` and `settle`); the endpoint record with price and payee, and the
+  contract's layout of endpoint and payment records; the escrow seller's quote, pay, retry-with-proof flow (HSK
+  `server/seller.py`, here `src/seller.mjs`). New for Portaldot during the Hacker House: prepaid sessions (`MeterSession`,
+  hash-chained vouchers, the meter, the session client), the ink! registry, cross-VM settlement in one Ethereum transaction
+  and its SCALE encoder, the Cloudflare Worker seller, the settler, the verifier and the paid-indexer example.
 - [forge-std](https://github.com/foundry-rs/forge-std) v1.16.2 (MIT/Apache-2.0), vendored unmodified under
   `contracts/evm/lib/`, tests only. [ink!](https://github.com/use-ink/ink) 5.1.1 (Apache-2.0).
 - [ethers](https://github.com/ethers-io/ethers.js) 6.16.0 (MIT), [polkadot.js](https://github.com/polkadot-js/api) 16.5.6
