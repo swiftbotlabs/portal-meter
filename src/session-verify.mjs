@@ -16,6 +16,7 @@ export { batchHash, replayLog } from './session.mjs';
 export const REDEEMED_TOPIC = eventTopic('Redeemed(bytes32,uint32,bytes32,uint96,uint96,uint32)');
 const PAGE = 500;
 const MAX_ROWS = 100_000;
+const NO_BATCH = 'at least one batch of this session is redeemed on-chain';
 const toHex = n => (typeof n === 'number' ? '0x' + n.toString(16) : n);
 
 /** The `Redeemed` events of one session, oldest first, over plain JSON-RPC (eth_getLogs). */
@@ -57,7 +58,7 @@ export async function fetchLog(seller, session, { fetchImpl = globalThis.fetch.b
 export async function verifySession({ session, rows, redemptions, anchor, endpointId }) {
   const v = verifyLog(session, rows, redemptions);
   // nothing on-chain to compare is not a proof of anything: fail closed
-  if (redemptions.length === 0) v.checks.push({ name: 'at least one batch of this session is redeemed on-chain', ok: false, detail: 'none found' });
+  if (redemptions.length === 0) v.checks.push({ name: NO_BATCH, ok: false, detail: 'none found' });
   let prev = 0n;
   for (const r of redemptions) {
     const paid = BigInt(r.cumulative) - prev;
@@ -86,6 +87,30 @@ export async function verifySession({ session, rows, redemptions, anchor, endpoi
     });
   }
   return { ok: v.checks.length > 0 && v.checks.every(c => c.ok), checks: v.checks };
+}
+
+/**
+ * Text lines and an exit code for a verifySellerSession result. ACCEPT is the only verdict with code 0. A session
+ * whose log checks pass but that has no batch on-chain yet is NOT YET (code 1): nothing has been proved, so it fails
+ * closed, but it is not called tampering either.
+ * @returns {{verdict: 'ACCEPT'|'REJECT'|'NOT YET', code: 0|1, lines: string[]}}
+ */
+export function sessionReport(r) {
+  const lines = [];
+  for (const b of r.redemptions || []) lines.push(`batch     up to request ${b.count}: ${b.paid} paid, block ${b.block}, tx ${b.tx}`);
+  for (const c of r.checks || []) lines.push(`${c.ok ? 'PASS' : 'FAIL'}      ${c.name}: ${c.detail}`);
+  const failed = (r.checks || []).filter(c => !c.ok);
+  const n = (r.redemptions || []).length;
+  if (r.ok && n > 0) {
+    lines.push(`ACCEPT    ${r.rows} request${r.rows === 1 ? '' : 's'} in the log, ${n} batch${n === 1 ? '' : 'es'} on-chain`);
+    return { verdict: 'ACCEPT', code: 0, lines };
+  }
+  if (n === 0 && failed.length === 1 && failed[0].name === NO_BATCH && (r.rows ?? 0) > 0) {
+    lines.push(`NOT YET   ${r.rows} request${r.rows === 1 ? '' : 's'} in the log, no batch on-chain yet: the seller settles on its own schedule, run this again later`);
+    return { verdict: 'NOT YET', code: 1, lines };
+  }
+  lines.push('REJECT');
+  return { verdict: 'REJECT', code: 1, lines };
 }
 
 /**

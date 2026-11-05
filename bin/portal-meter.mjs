@@ -12,13 +12,14 @@
 //   portal-meter session-open <endpoint id> --keys <env file> --budget 0.5 [--days 7] --out session.json
 //   portal-meter session-buy <url> --session session.json [--max 0.05]
 //   portal-meter session-close --session session.json
+//   portal-meter session-verify <seller url> --session session.json   ACCEPT / NOT YET / REJECT against the chain (no key)
 //
 // Keys are read from a 0600 env file (default variables PORTALDOT_EVM_BUYER_KEY / PORTALDOT_EVM_PROVIDER_KEY)
 // and never printed. Network and contract addresses come from deployments/testnet.json.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Abi, ContractPromise } from '@polkadot/api-contract';
-import { Wallet, hexlify, parseUnits, randomBytes } from 'ethers';
+import { Wallet, getAddress, hexlify, parseUnits, randomBytes } from 'ethers';
 import { NETWORK, loadDeployment, PATHS } from '../src/config.mjs';
 import { makeProvider, settlement as settlementContract, readEndpoint } from '../src/evm.mjs';
 import { InkRegistry } from '../src/registry.mjs';
@@ -41,6 +42,7 @@ import { sessionIdFor } from '../src/session.mjs';
 import { SessionClient } from '../src/session-client.mjs';
 import { CALLS_SPEC_3002 as CALLS, INK_REGISTER_SELECTOR, INK_SET_URI_SELECTOR, batchAll, contractsCall, inkUriData, reviveCall } from '../src/runtime-calls.mjs';
 import { RUNTIME_PALLETS_ADDRESS } from '../src/session-settle.mjs';
+import { verifySellerSession, sessionReport } from '../src/session-verify.mjs';
 
 const [cmd, ...rest] = process.argv.slice(2);
 const flag = (name, def = null) => {
@@ -211,7 +213,7 @@ if (cmd === 'status') {
   const expiresAt = latest.timestamp + Number(flag('--days', '7')) * 86_400;
   const r = await sendTx(wallet, { to: ses.sessionContract, data: sessionIface.encodeFunctionData('open', [endpointId, nonce, key.address, budget, expiresAt]) });
   const session = sessionIdFor(NETWORK.chainId, ses.sessionContract, wallet.address, endpointId, nonce).toLowerCase();
-  writeFileSync(out, JSON.stringify({ session, endpointId, provider: ep.provider, token: ep.token, sessionKey: key.privateKey, state: null }, null, 2) + '\n', { mode: 0o600 });
+  writeFileSync(out, JSON.stringify({ session, endpointId, provider: ep.provider, token: ep.token, openedAt: r.blockNumber, sessionKey: key.privateKey, state: null }, null, 2) + '\n', { mode: 0o600 });
   console.log(`session ${session}: budget ${flag('--budget', '0.5')}, tx ${r.hash}, block ${r.blockNumber}, state in ${out}`);
 } else if (cmd === 'session-buy') {
   const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
@@ -239,7 +241,31 @@ if (cmd === 'status') {
   const j = JSON.parse(readFileSync(file, 'utf8'));
   const r = await sendTx(wallet, { to: ses.sessionContract, data: sessionContract(ses.sessionContract, wallet).interface.encodeFunctionData('close', [j.session]) });
   console.log(`closed: tx ${r.hash}, block ${r.blockNumber}`);
+} else if (cmd === 'session-verify') {
+  // anyone can run this: the seller's public log, the payer-signed heads in the Redeemed events and the ink! anchors
+  const ses = JSON.parse(readFileSync(join(PATHS.root, 'deployments', 'sessions.json'), 'utf8'));
+  const file = flag('--session');
+  const usage = 'usage: portal-meter session-verify <seller url> --session session.json   (or --id 0x<session> --provider 0x<address> [--endpoint n])';
+  if (!positional[0] || !/^https?:\/\//.test(positional[0])) die(usage);
+  let j = { session: flag('--id'), provider: flag('--provider'), endpointId: flag('--endpoint') ? Number(flag('--endpoint')) : undefined };
+  if (file) {
+    try {
+      j = JSON.parse(readFileSync(file, 'utf8'));
+    } catch {
+      die(`cannot read ${file}`);
+    }
+  }
+  if (!/^0x[0-9a-fA-F]{64}$/.test(String(j.session)) || !/^0x[0-9a-fA-F]{40}$/.test(String(j.provider))) die(usage);
+  if (j.endpointId !== undefined && !(Number.isInteger(j.endpointId) && j.endpointId > 0)) die(usage);
+  const from = Number(flag('--from', j.openedAt ?? 0));
+  const r = await verifySellerSession({
+    seller: positional[0], session: j.session.toLowerCase(), deployment: ses, testnet: dep, provider: getAddress(j.provider),
+    endpointId: j.endpointId, fromBlock: Number.isInteger(from) && from >= 0 ? from : 0,
+  });
+  const rep = sessionReport(r);
+  console.log(rep.lines.join('\n'));
+  process.exit(rep.code);
 } else {
-  die('usage: portal-meter status | verify <receipt> [--body f] | buy <url> --keys f | serve --keys f | register | set-url | session-open | session-buy | session-close');
+  die('usage: portal-meter status | verify <receipt> [--body f] | buy <url> --keys f | serve --keys f | register | set-url | session-open | session-buy | session-close | session-verify');
 }
 if (cmd !== 'serve') process.exit(0);
