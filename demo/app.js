@@ -134,9 +134,11 @@ async function refreshContracts(d, md, sessions) {
     // endpoints 1 and 2 were registered by the escrow run against a seller on the developer's machine: their on-chain URL
     // is kept as recorded, and labelled, so nobody takes it for a public service
     const local = /^https?:\/\/(127\.|localhost|\[::1\])/i.test(uri);
-    rows.push(`<tr><td>${i}</td><td class="mono">${esc(uri)}${local ? ' <span class="pill local">local dev seller, escrow run</span>' : ''}</td><td>${formatUnits(ep.price, unit.decimals)} ${esc(unit.symbol)}</td>
+    // no score until a payer has confirmed at least one request: served counts alone are the provider's own record
+    const score = !rep ? '-' : rep.confirmed > 0 ? `${(rep.scoreBps / 100).toFixed(1)} %` : '<span class="muted">—, no confirmations yet</span>';
+    rows.push(`<tr${local ? ' class="local-ep"' : ''}><td>${i}</td><td class="mono">${esc(uri)}${local ? ' <span class="pill local">local test endpoint, not reachable</span>' : ''}</td><td>${formatUnits(ep.price, unit.decimals)} ${esc(unit.symbol)}</td>
       <td class="mono">${esc(short(ep.provider))}</td><td>${rep ? rep.served : '-'}</td><td>${rep ? rep.refunded : '-'}</td>
-      <td>${rep ? rep.confirmed : '-'}</td><td>${rep ? rep.disputed : '-'}</td><td>${rep ? (rep.scoreBps / 100).toFixed(1) + ' %' : '-'}</td></tr>`);
+      <td>${rep ? rep.confirmed : '-'}</td><td>${rep ? rep.disputed : '-'}</td><td>${score}</td></tr>`);
   }
   $('endpoints').tBodies[0].innerHTML = rows.length ? rows.join('') : '<tr><td colspan="9" class="muted">no endpoints yet</td></tr>';
 

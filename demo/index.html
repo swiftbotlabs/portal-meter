@@ -76,9 +76,10 @@
         <div class="try-cost">
           <h3 class="sub">What one request costs on-chain</h3>
           <div class="table-scroll"><table class="cost"><thead><tr><th></th><th>per-request escrow</th><th>prepaid session</th></tr></thead><tbody>
-            <tr><td>transactions per request</td><td>2</td><td><b>0</b></td></tr>
+            <tr><td>on-chain transactions, 1 request</td><td>2: pay, then settle</td><td><b>none</b>: a voucher signed over HTTP</td></tr>
+            <tr><td>on-chain transactions, 100 requests</td><td>200</td><td><b>3</b>: open, one settlement batch, close</td></tr>
             <tr><td>locked for good per request</td><td>7.53 tPOT</td><td><b>0.076 tPOT</b>, in a 100-request session</td></tr>
-            <tr><td>100 requests</td><td>about 753 tPOT</td><td><b>7.6 tPOT</b></td></tr>
+            <tr><td>locked for good, 100 requests</td><td>about 753 tPOT</td><td><b>7.6 tPOT</b></td></tr>
           </tbody></table></div>
           <p class="muted small">Measured on this testnet with our own keys, blocks 276657 to 276660 and <a href="https://scanner-testnet-v3.portaldot.dev/#/blocks/282559?tab=events" target="_blank" rel="noopener">282559</a>. Test tokens have no value; the ratio is the point.</p>
         </div>
@@ -153,7 +154,9 @@
       <h2>Endpoints and provider record</h2>
       <p class="muted">Price and payee come from <code>MeterSettlement</code> (EVM). The URL and the served / refunded /
         confirmed / disputed counts come from <code>MeterRegistry</code> (ink!), keyed by the provider's EVM address. On a session
-        endpoint, one "served" is one anchored batch of many requests.</p>
+        endpoint, one "served" is one anchored batch of many requests. A score shows only once a payer has confirmed a request.
+        Endpoints 1 and 2 were listed by our escrow test run against a seller on our own machine: their on-chain URLs are kept
+        as recorded and cannot be reached. Endpoints 3 and 4 are the public sellers.</p>
       <div class="table-scroll"><table id="endpoints"><thead><tr>
         <th>#</th><th>endpoint</th><th>price</th><th>provider</th><th>served</th><th>refunded</th><th>confirmed</th><th>disputed</th><th>score</th>
       </tr></thead><tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody></table></div>
