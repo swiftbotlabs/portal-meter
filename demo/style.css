@@ -266,4 +266,7 @@ td .pill.paid { color: var(--accent-text); }
 }
 td .pill.local { color: var(--ink-2); border-color: var(--line-2); background: var(--bg-2); font-family: var(--sans); font-stretch: 100%; margin-left: 8px; white-space: nowrap; }
 #endpoints tr.local-ep td { color: var(--muted); }
+#endpoints td .pill.local { display: flex; width: fit-content; margin: 6px 0 0; }
+#endpoints td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; min-width: 16em; }
+#endpoints td:last-child { white-space: normal; }
 #video > p { margin-bottom: var(--s-4); }
